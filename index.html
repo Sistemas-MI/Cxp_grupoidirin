@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CXP — Grupo Idirin</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #181c27;
+      --surface2: #1e2335;
+      --border: #2a3050;
+      --accent: #4f8ef7;
+      --accent2: #22c55e;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --text: #e8ecf5;
+      --muted: #8892b0;
+      --font: 'Inter', system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; min-height: 100vh; }
+
+    /* TOPBAR */
+    .topbar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 24px; height: 56px; display: flex; align-items: center; gap: 16px;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .topbar-brand { font-weight: 700; font-size: 16px; color: var(--text); }
+    .topbar-brand span { color: var(--accent); }
+    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    .realtime-badge {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(34,197,94,.12); color: var(--accent2);
+      border: 1px solid rgba(34,197,94,.25); border-radius: 20px;
+      padding: 4px 12px; font-size: 12px; font-weight: 600;
+    }
+    .realtime-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--accent2);
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+    .btn-new {
+      background: var(--accent); color: #fff; border: none; border-radius: 8px;
+      padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; gap: 6px; transition: opacity .15s;
+    }
+    .btn-new:hover { opacity: .85; }
+
+    /* STATS */
+    .stats-bar {
+      display: flex; gap: 12px; padding: 16px 24px; flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 18px; flex: 1; min-width: 160px;
+    }
+    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing:.06em; margin-bottom: 4px; }
+    .stat-value { font-size: 22px; font-weight: 700; }
+    .stat-value.green { color: var(--accent2); }
+    .stat-value.yellow { color: var(--warn); }
+    .stat-value.red { color: var(--danger); }
+    .stat-value.blue { color: var(--accent); }
+
+    /* FILTERS */
+    .filters {
+      display: flex; gap: 10px; padding: 14px 24px; flex-wrap: wrap;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .filters input, .filters select {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 7px 12px; font-size: 13px;
+    }
+    .filters input:focus, .filters select:focus { outline: none; border-color: var(--accent); }
+    .filters input { min-width: 240px; }
+    .btn-clear { background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
+    .btn-clear:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* TABLE */
+    .table-wrap { flex: 1; overflow-x: auto; padding: 0 24px 32px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; min-width: 1000px; }
+    thead th {
+      text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 600;
+      color: var(--muted); text-transform: uppercase; letter-spacing:.07em;
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+    tbody tr:hover { background: var(--surface); }
+    tbody td { padding: 10px 12px; vertical-align: middle; }
+    .badge {
+      display: inline-block; border-radius: 20px; padding: 3px 10px;
+      font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing:.04em;
+    }
+    .badge-pendiente { background: rgba(245,158,11,.15); color: var(--warn); }
+    .badge-pagado    { background: rgba(34,197,94,.15);  color: var(--accent2); }
+    .badge-vencido   { background: rgba(239,68,68,.15);  color: var(--danger); }
+    .badge-cancelado { background: rgba(136,146,176,.15); color: var(--muted); }
+    .badge-revision  { background: rgba(79,142,247,.15); color: var(--accent); }
+    .amount { font-variant-numeric: tabular-nums; font-weight: 600; }
+    .text-muted { color: var(--muted); }
+    .actions { display: flex; gap: 6px; }
+    .btn-icon { background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 12px; transition: all .12s; }
+    .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-icon.danger:hover { border-color: var(--danger); color: var(--danger); }
+    .empty-state { text-align: center; padding: 60px 0; color: var(--muted); }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65);
+      z-index: 200; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; width: 100%; max-width: 700px; max-height: 90vh;
+      overflow-y: auto; padding: 28px;
+    }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .modal-header h2 { font-size: 18px; font-weight: 700; }
+    .modal-close { background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 4px 8px; }
+    .modal-close:hover { color: var(--text); }
+    .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .modal-grid .full { grid-column: 1/-1; }
+    .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing:.05em; }
+    .field input, .field select, .field textarea {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px; padding: 9px 12px; font-size: 13px;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); }
+    .field textarea { resize: vertical; min-height: 70px; }
+    .field.required label::after { content: ' *'; color: var(--danger); }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+    .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 9px 18px; font-size: 13px; cursor: pointer; }
+    .btn-cancel:hover { border-color: var(--danger); color: var(--danger); }
+    .btn-save { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 9px 22px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn-save:hover { opacity: .85; }
+    .btn-save:disabled { opacity: .5; cursor: not-allowed; }
+    .form-error { color: var(--danger); font-size: 12px; margin-top: 10px; display: none; background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2); border-radius: 8px; padding: 8px 12px; }
+
+    /* TOAST */
+    #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 18px; font-size: 13px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.4);
+      animation: slideIn .2s ease; min-width: 260px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .toast.success { border-color: var(--accent2); }
+    .toast.error   { border-color: var(--danger); }
+    @keyframes slideIn { from{transform:translateX(80px);opacity:0} to{transform:none;opacity:1} }
+
+    /* LOADING SCREEN */
+    #loading-screen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; flex-direction: column; gap: 16px;
+    }
+    .spinner {
+      width: 36px; height: 36px; border: 3px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #app { display: none; flex-direction: column; min-height: 100vh; }
+  </style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div style="color:var(--muted);font-size:13px">Conectando con Supabase…</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header class="topbar">
+    <div class="topbar-brand">CXP <span>Grupo Idirin</span></div>
+    <div class="topbar-right">
+      <div class="realtime-badge"><div class="realtime-dot"></div>Tiempo real</div>
+      <button class="btn-new" onclick="abrirModal()">＋ Nueva Factura</button>
+    </div>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-label">Total Facturas</div><div class="stat-value blue" id="stat-total">—</div></div>
+    <div class="stat-card"><div class="stat-label">Pendientes</div><div class="stat-value yellow" id="stat-pendiente">—</div></div>
+    <div class="stat-card"><div class="stat-label">Pagadas</div><div class="stat-value green" id="stat-pagado">—</div></div>
+    <div class="stat-card"><div class="stat-label">Vencidas</div><div class="stat-value red" id="stat-vencido">—</div></div>
+    <div class="stat-card"><div class="stat-label">Monto Total MN</div><div class="stat-value blue" id="stat-monto">—</div></div>
+  </div>
+
+  <div class="filters">
+    <input id="f-search" type="text" placeholder="🔍  Buscar proveedor, factura, empresa…" oninput="filtrar()" />
+    <select id="f-status" onchange="filtrar()">
+      <option value="">Todos los estatus</option>
+      <option value="PENDIENTE">Pendiente</option>
+      <option value="PAGADO">Pagado</option>
+      <option value="VENCIDO">Vencido</option>
+      <option value="REVISION">Revisión</option>
+      <option value="CANCELADO">Cancelado</option>
+    </select>
+    <select id="f-empresa" onchange="filtrar()"><option value="">Todas las empresas</option></select>
+    <button class="btn-clear" onclick="limpiarFiltros()">✕ Limpiar</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Empresa</th>
+          <th>Proveedor</th>
+          <th>No. Factura</th>
+          <th>Fecha</th>
+          <th>Servicio</th>
+          <th>Área/Evento</th>
+          <th>Subtotal</th>
+          <th>IVA</th>
+          <th>Total MN</th>
+          <th>Vencimiento</th>
+          <th>Fecha Pago</th>
+          <th>Status</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-body"></tbody>
+    </table>
+    <div id="empty-state" class="empty-state" style="display:none">
+      <div class="icon">📋</div>
+      <div>No hay facturas que coincidan con los filtros.</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVA / EDITAR FACTURA -->
+<div class="modal-overlay" id="modal-overlay" onclick="cerrarModalOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Nueva Factura</h2>
+      <button class="modal-close" onclick="cerrarModal()">✕</button>
+    </div>
+    <div class="modal-grid">
+      <div class="field required"><label>Empresa</label><input id="fi-empresa" placeholder="Nombre de empresa" /></div>
+      <div class="field required"><label>Proveedor</label><input id="fi-proveedor" placeholder="Nombre del proveedor" /></div>
+      <div class="field required"><label>No. Factura</label><input id="fi-no_factura" placeholder="A-0001" /></div>
+      <div class="field"><label>Fecha Factura</label><input id="fi-fecha_factura" type="date" /></div>
+      <div class="field required"><label>Status</label>
+        <select id="fi-status">
+          <option value="PENDIENTE">Pendiente</option>
+          <option value="REVISION">Revisión</option>
+          <option value="PAGADO">Pagado</option>
+          <option value="VENCIDO">Vencido</option>
+          <option value="CANCELADO">Cancelado</option>
+        </select>
+      </div>
+      <div class="field"><label>Servicio</label><input id="fi-servicio" placeholder="Tipo de servicio" /></div>
+      <div class="field"><label>Área / Evento</label><input id="fi-area_evento" placeholder="Área o evento" /></div>
+      <div class="field"><label>Periodo Gasto</label><input id="fi-periodo_gasto" placeholder="Ej. Junio 2026" /></div>
+      <div class="field"><label>Subtotal</label><input id="fi-subtotal" type="number" step="0.01" placeholder="0.00" /></div>
+      <div class="field"><label>IVA</label><input id="fi-iva" type="number" step="0.01" placeholder="0.00" /></div>
+      <div class="field"><label>IVA Ret.</label><input id="fi-iva_ret" type="number" step="0.01" placeholder="0.00" /></div>
+      <div class="field"><label>ISR Ret.</label><input id="fi-isr_ret" type="number" step="0.01" placeholder="0.00" /></div>
+      <div class="field required"><label>Total MN</label><input id="fi-total_mn" type="number" step="0.01" placeholder="0.00" /></div>
+      <div class="field"><label>USD</label><input id="fi-usd" placeholder="Importe en USD" /></div>
+      <div class="field"><label>Fecha Vencimiento</label><input id="fi-fecha_vencimiento" type="date" /></div>
+      <div class="field"><label>Fecha Pago</label><input id="fi-fecha_pago" type="date" /></div>
+      <div class="field"><label>Cta. Pago</label><input id="fi-cta_pago" placeholder="Cuenta de pago" /></div>
+      <div class="field"><label>Solicita</label><input id="fi-solicita" placeholder="Quien solicita" /></div>
+      <div class="field"><label>Autoriza</label><input id="fi-autoriza" placeholder="Quien autoriza" /></div>
+      <div class="field full"><label>Observaciones</label><textarea id="fi-obs" placeholder="Notas adicionales…"></textarea></div>
+    </div>
+    <div id="form-error" class="form-error"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn-save" id="btn-save" onclick="guardarFactura()">💾 Guardar Factura</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+  // ── CREDENCIALES HARDCODEADAS ─────────────────────────────────────────────
+  const SB_URL = 'https://wcpjpaimbuflsgnthihg.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjcGpwYWltYnVmbHNnbnRoaWhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MDc4ODYsImV4cCI6MjA5Nzk4Mzg4Nn0.v0AttTTSkk-FwBGbEx3QHAZpcBFOvejjKzFoJtZWJvo';
+  const TABLA  = 'cxp_facturas';
+
+  // ── ESTADO ────────────────────────────────────────────────────────────────
+  let sb = null;
+  let facturas = [];
+  let editandoId = null;
+
+  // ── INIT ──────────────────────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', async () => {
+    sb = window.supabase.createClient(SB_URL, SB_KEY);
+    await cargarFacturas();
+    suscribirRealtime();
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+  });
+
+  // ── CARGAR ────────────────────────────────────────────────────────────────
+  async function cargarFacturas() {
+    const { data, error } = await sb
+      .from(TABLA)
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) { toast('Error al cargar: ' + error.message, 'error'); return; }
+    facturas = data || [];
+    actualizarEmpresas();
+    renderTabla(facturas);
+    actualizarStats(facturas);
+  }
+
+  // ── REALTIME ──────────────────────────────────────────────────────────────
+  function suscribirRealtime() {
+    sb.channel('cxp-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: TABLA }, ({ eventType, new: n, old: o }) => {
+        if (eventType === 'INSERT') {
+          facturas.unshift(n);
+          toast('✅ Nueva factura: ' + n.no_factura, 'success');
+        } else if (eventType === 'UPDATE') {
+          const i = facturas.findIndex(f => f.id === n.id);
+          if (i > -1) facturas[i] = n;
+          toast('✏️ Factura actualizada: ' + n.no_factura, 'success');
+        } else if (eventType === 'DELETE') {
+          facturas = facturas.filter(f => f.id !== o.id);
+          toast('🗑️ Factura eliminada', 'success');
+        }
+        actualizarEmpresas();
+        filtrar();
+        actualizarStats(facturas);
+      })
+      .subscribe();
+  }
+
+  // ── RENDER ────────────────────────────────────────────────────────────────
+  function renderTabla(data) {
+    const body = document.getElementById('tabla-body');
+    const empty = document.getElementById('empty-state');
+    if (!data.length) { body.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    body.innerHTML = data.map(f => `
+      <tr>
+        <td>${esc(f.empresa)}</td>
+        <td>${esc(f.proveedor)}</td>
+        <td style="font-weight:600">${esc(f.no_factura)}</td>
+        <td class="text-muted">${fecha(f.fecha_factura)}</td>
+        <td class="text-muted">${esc(f.servicio||'—')}</td>
+        <td class="text-muted">${esc(f.area_evento||'—')}</td>
+        <td class="amount">${moneda(f.subtotal)}</td>
+        <td class="amount">${moneda(f.iva)}</td>
+        <td class="amount" style="color:var(--accent)">${moneda(f.total_mn)}</td>
+        <td class="text-muted">${fecha(f.fecha_vencimiento)}</td>
+        <td class="text-muted">${fecha(f.fecha_pago)}</td>
+        <td><span class="badge badge-${(f.status||'').toLowerCase()}">${f.status||'—'}</span></td>
+        <td>
+          <div class="actions">
+            <button class="btn-icon" onclick="editarFactura(${f.id})" title="Editar">✏️</button>
+            <button class="btn-icon danger" onclick="eliminarFactura(${f.id},'${esc(f.no_factura)}')" title="Eliminar">🗑</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  // ── STATS ─────────────────────────────────────────────────────────────────
+  function actualizarStats(data) {
+    document.getElementById('stat-total').textContent     = data.length;
+    document.getElementById('stat-pendiente').textContent = data.filter(f => f.status === 'PENDIENTE').length;
+    document.getElementById('stat-pagado').textContent    = data.filter(f => f.status === 'PAGADO').length;
+    document.getElementById('stat-vencido').textContent   = data.filter(f => f.status === 'VENCIDO').length;
+    const total = data.reduce((s, f) => s + (parseFloat(f.total_mn) || 0), 0);
+    document.getElementById('stat-monto').textContent = moneda(total);
+  }
+
+  // ── FILTROS ───────────────────────────────────────────────────────────────
+  function filtrar() {
+    const q   = document.getElementById('f-search').value.toLowerCase();
+    const st  = document.getElementById('f-status').value;
+    const emp = document.getElementById('f-empresa').value;
+    let r = facturas;
+    if (q)   r = r.filter(f => [f.empresa,f.proveedor,f.no_factura,f.servicio,f.area_evento].join(' ').toLowerCase().includes(q));
+    if (st)  r = r.filter(f => f.status === st);
+    if (emp) r = r.filter(f => f.empresa === emp);
+    renderTabla(r);
+    actualizarStats(r);
+  }
+
+  function limpiarFiltros() {
+    document.getElementById('f-search').value = '';
+    document.getElementById('f-status').value = '';
+    document.getElementById('f-empresa').value = '';
+    renderTabla(facturas);
+    actualizarStats(facturas);
+  }
+
+  function actualizarEmpresas() {
+    const sel = document.getElementById('f-empresa');
+    const actual = sel.value;
+    const empresas = [...new Set(facturas.map(f => f.empresa).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">Todas las empresas</option>' +
+      empresas.map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join('');
+    sel.value = actual;
+  }
+
+  // ── MODAL ─────────────────────────────────────────────────────────────────
+  const CAMPOS = ['empresa','proveedor','no_factura','status','servicio','area_evento',
+    'periodo_gasto','subtotal','iva','iva_ret','isr_ret','total_mn','usd',
+    'fecha_factura','fecha_vencimiento','fecha_pago','cta_pago','solicita','autoriza','obs'];
+
+  function abrirModal(factura = null) {
+    editandoId = factura ? factura.id : null;
+    document.getElementById('modal-title').textContent = factura ? 'Editar Factura' : 'Nueva Factura';
+    document.getElementById('form-error').style.display = 'none';
+    CAMPOS.forEach(c => {
+      const el = document.getElementById('fi-' + c);
+      if (el) el.value = factura ? (factura[c] ?? '') : (c === 'status' ? 'PENDIENTE' : '');
+    });
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  function editarFactura(id) {
+    const f = facturas.find(f => f.id === id);
+    if (f) abrirModal(f);
+  }
+
+  function cerrarModal() {
+    document.getElementById('modal-overlay').classList.remove('open');
+    editandoId = null;
+  }
+
+  function cerrarModalOverlay(e) {
+    if (e.target === document.getElementById('modal-overlay')) cerrarModal();
+  }
+
+  // ── GUARDAR ───────────────────────────────────────────────────────────────
+  async function guardarFactura() {
+    const errEl = document.getElementById('form-error');
+    errEl.style.display = 'none';
+    const btn = document.getElementById('btn-save');
+
+    const g  = id => document.getElementById('fi-' + id)?.value?.trim() || null;
+    const gn = id => { const v = g(id); return v !== null ? parseFloat(v) : null; };
+    const gd = id => g(id) || null;
+
+    // Validar requeridos
+    const reqs = { empresa: 'Empresa', proveedor: 'Proveedor', no_factura: 'No. Factura', total_mn: 'Total MN' };
+    for (const [campo, lbl] of Object.entries(reqs)) {
+      if (!document.getElementById('fi-' + campo)?.value?.trim()) {
+        errEl.textContent = `El campo "${lbl}" es obligatorio.`;
+        errEl.style.display = 'block'; return;
+      }
+    }
+
+    const payload = {
+      empresa:           g('empresa'),
+      status:            g('status'),
+      proveedor:         g('proveedor'),
+      no_factura:        g('no_factura'),
+      fecha_factura:     gd('fecha_factura'),
+      servicio:          g('servicio'),
+      area_evento:       g('area_evento'),
+      subtotal:          gn('subtotal'),
+      iva:               gn('iva'),
+      iva_ret:           gn('iva_ret'),
+      isr_ret:           gn('isr_ret'),
+      total_mn:          gn('total_mn'),
+      usd:               g('usd'),
+      fecha_vencimiento: gd('fecha_vencimiento'),
+      fecha_pago:        gd('fecha_pago'),
+      cta_pago:          g('cta_pago'),
+      solicita:          g('solicita'),
+      autoriza:          g('autoriza'),
+      periodo_gasto:     g('periodo_gasto'),
+      obs:               g('obs'),
+    };
+
+    btn.disabled = true; btn.textContent = 'Guardando…';
+
+    let error;
+    if (editandoId) {
+      ({ error } = await sb.from(TABLA).update(payload).eq('id', editandoId));
+    } else {
+      ({ error } = await sb.from(TABLA).insert([payload]));
+    }
+
+    btn.disabled = false; btn.innerHTML = '💾 Guardar Factura';
+
+    if (error) {
+      errEl.textContent = 'Error al guardar: ' + error.message;
+      errEl.style.display = 'block';
+      toast('Error: ' + error.message, 'error');
+      return;
+    }
+
+    cerrarModal();
+  }
+
+  // ── ELIMINAR ──────────────────────────────────────────────────────────────
+  async function eliminarFactura(id, no) {
+    if (!confirm(`¿Eliminar la factura ${no}? Esta acción no se puede deshacer.`)) return;
+    const { error } = await sb.from(TABLA).delete().eq('id', id);
+    if (error) toast('Error al eliminar: ' + error.message, 'error');
+  }
+
+  // ── HELPERS ───────────────────────────────────────────────────────────────
+  function esc(s) {
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function fecha(d) {
+    if (!d) return '—';
+    const p = d.split('T')[0].split('-');
+    return `${p[2]}/${p[1]}/${p[0]}`;
+  }
+  function moneda(n) {
+    if (n === null || n === undefined || n === '') return '—';
+    return new Intl.NumberFormat('es-MX', { style:'currency', currency:'MXN', minimumFractionDigits:2 }).format(n);
+  }
+  function toast(msg, tipo = 'success') {
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = 'toast ' + tipo;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+  }
+</script>
+</body>
+</html>
