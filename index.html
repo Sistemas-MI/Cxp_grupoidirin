@@ -2230,7 +2230,7 @@ $('confirmSi').addEventListener('click',async()=>{
 // ═══════════════════════════════════════════════════════
 $('btnExportCSV').addEventListener('click',()=>{
   const regs=regsFiltrados();
-  const cols=['empresa','proveedor','no_factura','fecha_factura','servicio','area_evento','solicita','usd','subtotal','iva','ret_iva','ret_isr','monto_total','abonado','saldo','fecha_vencimiento','fecha_pago','cta_pago','status','obs'];
+  const cols=['empresa','proveedor','no_factura','fecha_factura','servicio','area_evento','solicita','usd','subtotal','iva','ret_iva','ret_isr','total_mn','abonado','saldo','fecha_vencimiento','fecha_pago','cta_pago','status','obs'];
   const heads=['Empresa','Proveedor','No. Factura','Fecha Factura','Servicio','Área/Evento','Solicita','Moneda','Subtotal','IVA','Ret. IVA','Ret. ISR','Monto Total','Abonado','Saldo','Fecha Vencimiento','Fecha Pago','Cuenta Pago','Status','Observaciones'];
   const getV=(r,c)=>{
     if (c==='solicita') return r.solicita||r.periodo_gasto||'';
