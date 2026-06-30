@@ -778,7 +778,7 @@ tr.prioritaria .td-prov b{ color:var(--cafe); }
           <input type="number" id="fIva" placeholder="0.00" step="0.01" min="0">
         </div>
         <div class="form-group" id="fg-total">
-          <label>Total MN <span class="req">*</span></label>
+          <label>Monto Total<span class="req">*</span></label>
           <input type="number" id="fTotal" placeholder="0.00" step="0.01" min="0">
           <span class="err-tip">Ingresa el importe total</span>
         </div>
@@ -2230,8 +2230,8 @@ $('confirmSi').addEventListener('click',async()=>{
 // ═══════════════════════════════════════════════════════
 $('btnExportCSV').addEventListener('click',()=>{
   const regs=regsFiltrados();
-  const cols=['empresa','proveedor','no_factura','fecha_factura','servicio','area_evento','solicita','usd','subtotal','iva','ret_iva','ret_isr','total_mn','abonado','saldo','fecha_vencimiento','fecha_pago','cta_pago','status','obs'];
-  const heads=['Empresa','Proveedor','No. Factura','Fecha Factura','Servicio','Área/Evento','Solicita','Moneda','Subtotal','IVA','Ret. IVA','Ret. ISR','Total MN','Abonado','Saldo','Fecha Vencimiento','Fecha Pago','Cuenta Pago','Status','Observaciones'];
+  const cols=['empresa','proveedor','no_factura','fecha_factura','servicio','area_evento','solicita','usd','subtotal','iva','ret_iva','ret_isr','monto_total','abonado','saldo','fecha_vencimiento','fecha_pago','cta_pago','status','obs'];
+  const heads=['Empresa','Proveedor','No. Factura','Fecha Factura','Servicio','Área/Evento','Solicita','Moneda','Subtotal','IVA','Ret. IVA','Ret. ISR','Monto Total','Abonado','Saldo','Fecha Vencimiento','Fecha Pago','Cuenta Pago','Status','Observaciones'];
   const getV=(r,c)=>{
     if (c==='solicita') return r.solicita||r.periodo_gasto||'';
     if (c==='empresa')  return EMPRESAS[r[c]]?.nombre||r[c]||'';
