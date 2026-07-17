@@ -669,22 +669,23 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
         <table id="tablaFacturas">
           <thead><tr>
             <th style="width:2.2%;padding:11px 4px 11px 10px" title="Prioridad"></th>
-            <th class="th-sort" style="width:11%" data-col="proveedor">Proveedor <span class="s-ic"></span></th>
+            <th class="th-sort" style="width:6%" data-col="folio">Folio <span class="s-ic"></span></th>
+            <th class="th-sort" style="width:9%" data-col="proveedor">Proveedor <span class="s-ic"></span></th>
             <th class="th-sort" style="width:7.5%" data-col="no_factura">Factura <span class="s-ic"></span></th>
             <th class="th-sort" style="width:6.5%" data-col="fecha_factura">F. Factura <span class="s-ic"></span></th>
             <th class="th-sort r" style="width:8.5%" data-col="total_mn">Importe <span class="s-ic"></span></th>
             <th class="th-sort r" style="width:8.5%" data-col="saldo">Saldo <span class="s-ic"></span></th>
             <th class="th-sort" style="width:6%" data-col="usd">Moneda <span class="s-ic"></span></th>
             <th class="th-sort r" style="width:7%" data-col="total_usd">Monto USD <span class="s-ic"></span></th>
-            <th class="th-sort" style="width:8.5%" data-col="servicio">Servicio <span class="s-ic"></span></th>
+            <th class="th-sort" style="width:7%" data-col="servicio">Servicio <span class="s-ic"></span></th>
             <th class="th-sort" style="width:6%" data-col="fecha_vencimiento">Vence <span class="s-ic"></span></th>
             <th class="th-sort" style="width:6%" data-col="fecha_pago">F. Pago <span class="s-ic"></span></th>
             <th class="th-sort" style="width:8%" data-col="status">Status <span class="s-ic"></span></th>
-            <th class="th-sort" style="width:8.3%" data-col="solicita">Solicita <span class="s-ic"></span></th>
-            <th class="th-sort" style="width:6%" data-col="empresa">Empresa <span class="s-ic"></span></th>
+            <th class="th-sort" style="width:6.8%" data-col="solicita">Solicita <span class="s-ic"></span></th>
+            <th class="th-sort" style="width:5%" data-col="empresa">Empresa <span class="s-ic"></span></th>
           </tr></thead>
           <tbody id="facturasTbody">
-            <tr><td colspan="13"><div class="empty-state"><div class="es-ico">📂</div><p>Cargando…</p></div></td></tr>
+            <tr><td colspan="14"><div class="empty-state"><div class="es-ico">📂</div><p>Cargando…</p></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -799,7 +800,10 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <div class="modal-head">
-      <h3 id="modalTitulo">Nueva <em>factura</em></h3>
+      <div style="display:flex;align-items:baseline;gap:9px">
+        <h3 id="modalTitulo">Nueva <em>factura</em></h3>
+        <span id="modalFolio" style="font-size:10.5px;color:var(--dorado);letter-spacing:.08em"></span>
+      </div>
       <button class="modal-close" id="modalClose">✕</button>
     </div>
     <div class="modal-body">
@@ -1380,6 +1384,7 @@ function regsFiltrados() {
       const q = busqueda.toLowerCase();
       return (r.proveedor||'').toLowerCase().includes(q)  ||
              (r.no_factura||'').toLowerCase().includes(q) ||
+             (r.folio||'').toLowerCase().includes(q)      ||
              (r.servicio||'').toLowerCase().includes(q)   ||
              (r.solicita||'').toLowerCase().includes(q)   ||
              (r.obs||'').toLowerCase().includes(q);
@@ -1609,7 +1614,7 @@ function renderFacturas() {
   $('pagInfo').textContent = total>0?`Mostrando ${total} de ${total}`:'Sin registros';
 
   if (!pag.length) {
-    $('facturasTbody').innerHTML=`<tr><td colspan="13"><div class="empty-state"><div class="es-ico">📋</div><p>No hay registros con estos filtros.</p></div></td></tr>`;
+    $('facturasTbody').innerHTML=`<tr><td colspan="14"><div class="empty-state"><div class="es-ico">📋</div><p>No hay registros con estos filtros.</p></div></td></tr>`;
     return;
   }
 
@@ -1622,6 +1627,7 @@ function renderFacturas() {
     const saldo  = saldoDeReg(r);
     const saldado= r.status==='pagada' || saldo<=0;
     return `<tr class="fila-data${esVenc?' vencido':''}" data-id="${r.id}">
+      <td style="font-size:10.5px;color:var(--suave);white-space:nowrap">${r.folio||'—'}</td>
       <td class="td-prov" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><b>${r.proveedor||'—'}</b></td>
       <td style="font-size:10.5px;color:var(--suave);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.no_factura||'—'}</td>
       <td style="font-size:10.5px;color:var(--suave)">${fmtDate(r.fecha_factura)}</td>
@@ -2354,6 +2360,7 @@ function abrirEdicion(id) {
   if (!r) return;
   editandoId = String(r.id);           // ← guardamos el ID antes de abrir
   $('modalTitulo').innerHTML = 'Editar <em>factura</em>';
+  $('modalFolio').textContent = r.folio || '';
   $('btnEliminar').style.display = '';  // mostrar botón eliminar
   llenarModal(r);
   limpiarErrores();
@@ -2452,6 +2459,7 @@ const cerrarModal = () => { $('modalOverlay').className='modal-overlay'; };
 $('btnNuevo').addEventListener('click',()=>{
   editandoId = null;                          // ← null = nueva factura
   $('modalTitulo').innerHTML = 'Nueva <em>factura</em>';
+  $('modalFolio').textContent = '';
   $('btnEliminar').style.display = 'none';
   llenarModal();
   limpiarErrores();
