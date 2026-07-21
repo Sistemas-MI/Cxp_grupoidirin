@@ -2980,11 +2980,13 @@ function generarPDFPrioridad() {
 
     return `
     <div class="pp-empresa-page"${esUltima?'':' style="break-after:page;page-break-after:always"'}>
-      <div class="pp-header">
+      <div class="pp-header" style="position:relative">
         <div>
           <div class="logo-grupo">Grupo Idirin · Cuentas por Pagar</div>
           <div class="pp-titulo">Propuesta de <em>pagos</em></div>
-          <div class="pp-sub" style="font-size:12px">${EMPRESAS[empKey]?.nombre || empKey}</div>
+        </div>
+        <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;white-space:nowrap;pointer-events:none">
+          <div style="font-family:'EB Garamond',serif;font-size:34px;font-weight:400;color:var(--crema);letter-spacing:.01em">${EMPRESAS[empKey]?.nombre || empKey}</div>
         </div>
         <div class="pp-header-right">
           <div class="pp-hr-label">Total seleccionado</div>
