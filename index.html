@@ -384,6 +384,35 @@ tr.prioritaria .td-prov b{ color:var(--cafe); }
 }
 .btn-reporte-prio:hover{ background:var(--cafe-l); }
 .prb-actions{ display:flex;align-items:center;gap:8px; }
+
+/* ── USD — texto plano, alineado debajo del monto principal ── */
+.prb-col{ display:flex;flex-direction:column;gap:5px; }
+.usd-line{ display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:10px;color:var(--suave);padding-left:1px; }
+.usd-line b{ font-weight:500;color:var(--suave); }
+.usd-line-val{ font-family:'EB Garamond',serif;font-size:14px;color:#8a6a18;font-weight:600; }
+.usd-line-val-mxn{ font-size:12.5px;color:var(--cafe);font-weight:500; }
+
+/* ── BARRA DE TOTALES (Saldo pendiente) — bloque USD en burbuja ── */
+.usd-badge{
+  display:flex;align-items:center;gap:12px;
+  background:linear-gradient(120deg,rgba(184,149,74,.16),rgba(184,149,74,.05));
+  border:1px solid rgba(184,149,74,.4);
+  border-radius:20px;
+  padding:6px 16px 6px 8px;
+}
+.usd-badge-ico{
+  flex:0 0 auto;width:26px;height:26px;border-radius:50%;
+  background:var(--dorado);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:8px;font-weight:700;letter-spacing:.02em;
+}
+.usd-badge-item{ line-height:1.2; }
+.usd-badge-lbl{ font-size:8px;letter-spacing:.13em;text-transform:uppercase;color:var(--suave); }
+.usd-badge-val{ font-family:'EB Garamond',serif;font-size:16px;font-weight:600;color:#8a6a18; }
+.usd-badge-val-mxn{ font-size:13px;font-weight:500;color:var(--cafe); }
+.usd-badge-div{ width:1px;align-self:stretch;background:rgba(184,149,74,.3); }
+@media(max-width:640px){ .usd-badge{ flex-wrap:wrap;row-gap:6px; } }
+
 .btn-prio-clear{
   background:none;border:1px solid var(--cafe-sm);border-radius:3px;
   padding:9px 14px;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
@@ -422,8 +451,10 @@ tr.prioritaria .td-prov b{ color:var(--cafe); }
 .pp-tabla-wrap th.r{text-align:right}
 .pp-tabla-wrap td{font-size:11px;padding:10px 10px;border-bottom:1px solid var(--linea);color:var(--texto);vertical-align:top;line-height:1.4}
 .pp-tabla-wrap td.r{text-align:right;font-variant-numeric:tabular-nums}
-.pp-tabla-wrap tr.pp-total td{background:var(--crema-dark);font-weight:600;border-bottom:none;padding-top:11px;padding-bottom:11px}
+.pp-tabla-wrap tr.pp-total td{background:var(--crema-dark);font-weight:600;border-bottom:none;padding-top:11px;padding-bottom:11px;vertical-align:middle}
 .pp-tabla-wrap tr.pp-total td.r{font-family:'EB Garamond',serif;font-size:15px}
+.usd-cell-lbl{font-size:7.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--suave);margin-bottom:1px}
+.usd-cell-val{font-family:'EB Garamond',serif;font-size:15px;color:#8a6a18;font-weight:600}
 
 .pp-resumen-label{font-family:'EB Garamond',serif;font-size:16px;color:var(--texto);padding:26px 22px 10px;border-top:1px solid var(--linea);margin-top:10px}
 .pp-emp-grid{display:flex;flex-wrap:wrap;gap:14px;padding:0 22px 22px}
@@ -635,12 +666,18 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
           <span id="saldoPendienteLabel">Saldo pendiente</span>
           <span class="prb-sep">·</span>
           <span class="prb-monto" id="saldoPendienteMonto">$0.00</span>
-          <span class="prb-sep">·</span>
-          <span id="saldoPendienteUsdLabel">Pendiente en USD</span>
-          <span class="prb-monto" id="saldoPendienteUsdMonto">US$0.00</span>
-          <span class="prb-sep">·</span>
-          <span>Importe MXN TC</span>
-          <span class="prb-monto" id="saldoPendienteUsdMxnMonto">$0.00</span>
+        </div>
+        <div class="usd-badge" id="saldoPendienteUsdLine" style="display:none">
+          <span class="usd-badge-ico">US$</span>
+          <div class="usd-badge-item">
+            <div class="usd-badge-lbl" id="saldoPendienteUsdLabel">Pendiente en USD</div>
+            <div class="usd-badge-val" id="saldoPendienteUsdMonto">US$0.00</div>
+          </div>
+          <span class="usd-badge-div"></span>
+          <div class="usd-badge-item">
+            <div class="usd-badge-lbl">Equiv. MXN (TC)</div>
+            <div class="usd-badge-val usd-badge-val-mxn" id="saldoPendienteUsdMxnMonto">$0.00</div>
+          </div>
         </div>
       </div>
       <div class="tabla-filtros">
@@ -652,11 +689,17 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
       </div>
       <!-- Banner que aparece solo cuando el filtro "Prioridad" está activo -->
       <div class="prio-reporte-bar" id="prioReporteBar" style="display:none">
-        <div class="prb-info">
-          <span class="prb-star">★</span>
-          <span id="prioReporteLabel">0 facturas en prioridad</span>
-          <span class="prb-sep">·</span>
-          <span class="prb-monto" id="prioReporteMonto">$0</span>
+        <div class="prb-col">
+          <div class="prb-info">
+            <span class="prb-star">★</span>
+            <span id="prioReporteLabel">0 facturas en prioridad</span>
+            <span class="prb-sep">·</span>
+            <span class="prb-monto" id="prioReporteMonto">$0</span>
+          </div>
+          <div class="usd-line" id="prioUsdLine" style="display:none">
+            <span>En dólares</span>
+            <span class="usd-line-val" id="prioUsdMonto">US$0.00</span>
+          </div>
         </div>
         <div class="prb-actions">
           <button class="btn-prio-clear" id="prioClear">✕ Quitar todas</button>
@@ -1610,6 +1653,9 @@ function renderFacturas() {
     ? grupo.filter(r=>r.usd==='USD').reduce((s,r)=>s+(parseFloat(r.total_mn)||0), 0)
     : grupo.filter(r=>r.usd==='USD').reduce((s,r)=>s+saldoDeReg(r), 0);
   $('saldoPendienteUsdMxnMonto').textContent = fmt(saldoUsdEnMxn);
+
+  // La línea USD solo se muestra si hay facturas en dólares en el grupo actual.
+  $('saldoPendienteUsdLine').style.display = usdGrupo.length > 0 ? 'flex' : 'none';
 
   $('pagInfo').textContent = total>0?`Mostrando ${total} de ${total}`:'Sin registros';
 
@@ -2566,23 +2612,30 @@ $('btnExportCSV').addEventListener('click',()=>{
 const FILTRO_LABELS = {todas:'Todas',pendiente:'Pendientes',vencida:'Vencidas',pagada:'Pagadas',prioridad:'Prioridad'};
 
 $('btnExportFacturasCSV').addEventListener('click',()=>{
-  const regs = regsFiltrados();
+  const regs = sortRegs(regsFiltrados());
   if (!regs.length) { toast('No hay facturas con este filtro','err'); return; }
-  const cols=['empresa','proveedor','no_factura','fecha_factura','area_evento','solicita','usd','subtotal','iva','ret_iva','ret_isr','total_mn','abonado','saldo','servicio','fecha_vencimiento','dias','fecha_pago','cta_pago','status','obs'];
-  const heads=['Empresa','Proveedor','No. Factura','Fecha Factura','Área/Evento','Solicita','Moneda','Subtotal','IVA','Ret. IVA','Ret. ISR','Monto Total','Abonado','Saldo','Servicio','Fecha Vencimiento','Días','Fecha Pago','Cuenta Pago','Status','Observaciones'];
+  // Mismas columnas y mismo orden que se ven en la tabla "Registros CxP" en pantalla.
+  const cols=['folio','proveedor','no_factura','fecha_factura','total_mn','saldo','usd','total_usd','servicio','fecha_vencimiento','fecha_pago','status','solicita','empresa'];
+  const heads=['Folio','Proveedor','Factura','F. Factura','Importe','Saldo','Moneda','Monto USD','Servicio','Vence','F. Pago','Status','Solicita','Empresa'];
   const getV=(r,c)=>{
-    if (c==='solicita') return r.solicita||r.periodo_gasto||'';
-    if (c==='empresa')  return EMPRESAS[r[c]]?.nombre||r[c]||'';
-    if (c==='abonado')  return abonadoDeReg(r);
-    if (c==='saldo')    return saldoDeReg(r);
-    if (c==='dias') {
-      if (!r.fecha_vencimiento) return '';
-      const diff = Math.floor((new Date(r.fecha_vencimiento+'T12:00:00') - today()) / 86400000);
-      return diff>=0 ? `${diff} días` : `${diff} días vencidos`;
-    }
+    if (c==='solicita')  return r.solicita||r.periodo_gasto||'';
+    if (c==='empresa')   return EMPRESAS[r.empresa]?.short||r.empresa||'';
+    if (c==='saldo')     return saldoDeReg(r).toFixed(2);
+    if (c==='total_mn')  return (parseFloat(r.total_mn)||0).toFixed(2);
+    if (c==='total_usd') return (r.usd==='USD' && r.total_usd!=null) ? parseFloat(r.total_usd).toFixed(2) : '';
+    if (c==='status')    return r.status==='pagada'?'Pagada':(r.status!=='pagada'&&diasVenc(r.fecha_vencimiento)>0)?'Vencida':'Pendiente';
     return r[c]??'';
   };
-  const csv=[heads.join(','),...regs.map(r=>cols.map(c=>'"'+String(getV(r,c)).replace(/"/g,'""')+'"').join(','))].join('\n');
+  const filas = regs.map(r=>cols.map(c=>'"'+String(getV(r,c)).replace(/"/g,'""')+'"').join(','));
+
+  // ── Totales al final: Saldo total en pesos (Total MXN) y suma de Monto USD (Total USD) ──
+  const totalMxn   = regs.reduce((s,r)=>s+saldoDeReg(r), 0);
+  const totalUsd   = regs.filter(r=>r.usd==='USD' && r.total_usd!=null).reduce((s,r)=>s+(parseFloat(r.total_usd)||0), 0);
+  const filaBlanco = cols.map(()=>'""').join(',');
+  const filaTotMxn = cols.map(c=> c==='proveedor' ? '"Total MXN (MXN)"' : c==='saldo' ? `"${totalMxn.toFixed(2)}"` : '""').join(',');
+  const filaTotUsd = cols.map(c=> c==='proveedor' ? '"Total USD"'       : c==='total_usd' ? `"${totalUsd.toFixed(2)}"` : '""').join(',');
+
+  const csv=[heads.join(','), ...filas, filaBlanco, filaTotMxn, filaTotUsd].join('\n');
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
   const filtroTag = FILTRO_LABELS[filtroActual] || 'Filtro';
@@ -2595,33 +2648,35 @@ function generarPDFFacturasFiltradas() {
   const regs = sortRegs(regsFiltrados());
   if (!regs.length) { toast('No hay facturas con este filtro','err'); return; }
   const filtroTag  = FILTRO_LABELS[filtroActual] || 'Todas';
-  const esPagadas  = filtroActual === 'pagada';
   // Escapa caracteres especiales (&, <, >, comillas) para que un dato con esos símbolos
   // (ej. "Fernández & Asociados") no rompa la estructura de la tabla del PDF.
   const esc = v => String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-  const totalMonto = regs.reduce((s,r)=> s + (r.status==='pagada' ? (parseFloat(r.total_mn)||0) : saldoDeReg(r)), 0);
+  // ── Totales: Saldo total en pesos (Total MXN) y suma de Monto USD (Total USD) ──
+  const totalMxn = regs.reduce((s,r)=>s+saldoDeReg(r), 0);
+  const totalUsd = regs.filter(r=>r.usd==='USD' && r.total_usd!=null).reduce((s,r)=>s+(parseFloat(r.total_usd)||0), 0);
 
   const filas = regs.map(r=>{
     const dias    = diasVenc(r.fecha_vencimiento);
     const esVenc  = r.status!=='pagada' && dias>0;
     const bCls    = r.status==='pagada'?'badge-pagada':esVenc||r.status==='vencida'?'badge-vencida':'badge-pendiente';
     const bTxt    = r.status==='pagada'?'Pagada':esVenc?'Vencida':'Pendiente';
-    const abonado = abonadoDeReg(r);
-    const montoCol = r.status==='pagada' ? (parseFloat(r.total_mn)||0) : saldoDeReg(r);
+    const saldo   = saldoDeReg(r);
     return `<tr>
+      <td style="color:var(--suave);white-space:nowrap">${esc(r.folio)||'—'}</td>
       <td style="white-space:nowrap"><b>${esc(r.proveedor)||'—'}</b></td>
       <td style="color:var(--suave);white-space:nowrap">${esc(r.no_factura)||'—'}</td>
-      <td><span style="background:var(--cafe-xs);padding:2px 7px;border-radius:2px;font-size:8.5px;letter-spacing:.05em">${esc(EMPRESAS[r.empresa]?.short||r.empresa)||'—'}</span></td>
       <td style="color:var(--suave);white-space:nowrap">${fmtDate(r.fecha_factura)}</td>
+      <td class="r mono" style="white-space:nowrap">${fmt(parseFloat(r.total_mn)||0)}</td>
+      <td class="r mono" style="white-space:nowrap">${fmt(saldo)}</td>
+      <td style="text-align:center"><span style="background:var(--dorado-xs);padding:2px 7px;border-radius:2px;font-size:8.5px;letter-spacing:.05em">${esc(r.usd)||'MXN'}</span></td>
+      <td class="r mono" style="white-space:nowrap">${(r.usd==='USD'&&r.total_usd!=null)?('US$'+parseFloat(r.total_usd).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})):'—'}</td>
+      <td style="color:var(--suave);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.servicio)||'—'}</td>
       <td style="white-space:nowrap">${fmtDate(r.fecha_vencimiento)}</td>
-      <td class="r" style="white-space:nowrap;${esVenc?'color:var(--rojo);font-weight:600':'color:var(--suave)'}">${esVenc?dias:'—'}</td>
-      <td class="r mono" style="white-space:nowrap">${fmt(montoCol)}${abonado>0&&r.status!=='pagada'?`<br><span style="font-size:8.5px;color:#8a6a18;font-weight:600">abonado ${fmt(abonado)}</span>`:''}</td>
-      <td style="color:var(--suave);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.servicio)||'—'}</td>
+      <td style="color:var(--suave);white-space:nowrap">${fmtDate(r.fecha_pago)}</td>
       <td style="white-space:nowrap"><span class="badge ${bCls}">${bTxt}</span></td>
       <td style="color:var(--suave);white-space:nowrap">${esc(r.solicita||r.periodo_gasto)||'—'}</td>
-      <td style="color:var(--suave);white-space:nowrap">${esc(r.cta_pago)||'—'}</td>
-      <td style="color:var(--suave);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.obs)||'—'}</td>
+      <td><span style="background:var(--cafe-xs);padding:2px 7px;border-radius:2px;font-size:8.5px;letter-spacing:.05em">${esc(EMPRESAS[r.empresa]?.short||r.empresa)||'—'}</span></td>
     </tr>`;
   }).join('');
 
@@ -2637,26 +2692,27 @@ function generarPDFFacturasFiltradas() {
         <div class="pp-sub" style="font-size:12px">${filtroTag}</div>
       </div>
       <div class="pp-header-right">
-        <div class="pp-hr-label">${esPagadas?'Total pagado':'Saldo total'}</div>
-        <div class="pp-hr-monto">${fmt(totalMonto)}</div>
+        <div class="pp-hr-label">Total MXN</div>
+        <div class="pp-hr-monto">${fmt(totalMxn)}</div>
         <div class="pp-hr-fecha">${today().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'})}</div>
       </div>
     </div>
 
     <div class="pp-kpis">
-      <div class="pp-kpi"><div class="k-label">${esPagadas?'Total pagado':'Saldo total'}</div><div class="k-val">${fmt(totalMonto)}</div></div>
+      <div class="pp-kpi"><div class="k-label">Total MXN (MXN)</div><div class="k-val">${fmt(totalMxn)}</div></div>
       <div class="pp-kpi"><div class="k-label">Facturas</div><div class="k-val">${regs.length}</div></div>
+      ${totalUsd>0?`<div class="pp-kpi"><div class="k-label">Total USD</div><div class="k-val">US$${totalUsd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>`:''}
     </div>
 
     <p class="pp-detalle-label">Detalle de facturas — ${filtroTag}</p>
     <div class="pp-tabla-wrap">
       <table>
         <thead><tr>
-          <th>Proveedor</th><th>No. Factura</th><th>Empresa</th><th>F. Factura</th><th>Vencimiento</th><th class="r">Días</th><th class="r">${esPagadas?'Monto':'Saldo'}</th><th>Servicio</th><th>Status</th><th>Solicita</th><th>Cta. Pago</th><th>Obs.</th>
+          <th>Folio</th><th>Proveedor</th><th>Factura</th><th>F. Factura</th><th class="r">Importe</th><th class="r">Saldo</th><th style="text-align:center">Moneda</th><th class="r">Monto USD</th><th>Servicio</th><th>Vence</th><th>F. Pago</th><th>Status</th><th>Solicita</th><th>Empresa</th>
         </tr></thead>
         <tbody>
           ${filas}
-          <tr class="pp-total"><td colspan="6">Total general</td><td class="r">${fmt(totalMonto)}</td><td colspan="5"></td></tr>
+          <tr class="pp-total"><td colspan="4">Total MXN (MXN)</td><td></td><td class="r">${fmt(totalMxn)}</td><td></td><td class="r">${totalUsd>0?`<div class="usd-cell-lbl">Total USD</div><div class="usd-cell-val">US$${totalUsd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>`:''}</td><td colspan="6"></td></tr>
         </tbody>
       </table>
     </div>
@@ -2699,6 +2755,14 @@ function generarPDFReportes() {
   const pagado  = base.reduce((s,r)=>s + (r.status==='pagada' ? (parseFloat(r.total_mn)||0) : abonadoDeReg(r)), 0);
   const pend    = base.filter(r=>r.status!=='pagada').reduce((s,r)=>s+saldoDeReg(r), 0);
   const vencido = base.filter(r=>r.status!=='pagada'&&diasVenc(r.fecha_vencimiento)>0).reduce((s,r)=>s+saldoDeReg(r), 0);
+
+  // ── Total en USD del periodo (monto real en dólares, sin convertir a pesos) ──
+  const usdBase  = base.filter(r=>r.usd==='USD' && r.total_usd!=null);
+  const totalUsd = usdBase.reduce((s,r)=>{
+    const tc = parseFloat(r.tipo_cambio) || 0;
+    const abonadoUsd = tc>0 ? abonadoDeReg(r)/tc : 0;
+    return s + (r.status==='pagada' ? (parseFloat(r.total_usd)||0) : Math.max(parseFloat(r.total_usd) - abonadoUsd, 0));
+  }, 0);
 
   // ── Gráfica "Pagado por período" (misma agrupación que en pantalla, cantidades completas) ──
   const regsPag = base.filter(r=>r.status==='pagada'&&r.fecha_pago);
@@ -2756,6 +2820,15 @@ function generarPDFReportes() {
     const pagE  = er.reduce((s,r)=>s + (r.status==='pagada' ? (parseFloat(r.total_mn)||0) : abonadoDeReg(r)), 0);
     const pendE = er.filter(r=>r.status!=='pagada').reduce((s,r)=>s+saldoDeReg(r),0);
     const pct   = total>0?Math.round((pagE/total)*100):0;
+
+    // Monto real en USD de esta empresa (si tiene facturas en dólares).
+    const usdE  = er.filter(r=>r.usd==='USD' && r.total_usd!=null);
+    const totalUsdE = usdE.reduce((s,r)=>{
+      const tc = parseFloat(r.tipo_cambio) || 0;
+      const abonadoUsd = tc>0 ? abonadoDeReg(r)/tc : 0;
+      return s + (r.status==='pagada' ? (parseFloat(r.total_usd)||0) : Math.max(parseFloat(r.total_usd) - abonadoUsd, 0));
+    }, 0);
+
     return `<div class="rp-emp-card">
       <div class="rp-emp-top">
         <div class="rp-emp-nombre">${info.nombre}</div>
@@ -2765,6 +2838,7 @@ function generarPDFReportes() {
         <div class="rp-emp-stat"><div class="es-lbl">Total</div><div class="es-val">${fmt(total)}</div></div>
         <div class="rp-emp-stat"><div class="es-lbl">Pagado</div><div class="es-val" style="color:var(--verde)">${fmt(pagE)}</div></div>
         <div class="rp-emp-stat"><div class="es-lbl">Pendiente</div><div class="es-val" style="color:var(--rojo)">${fmt(pendE)}</div></div>
+        ${totalUsdE>0?`<div class="rp-emp-stat"><div class="es-lbl">En USD</div><div class="es-val" style="color:#8a6a18">US$${totalUsdE.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>`:''}
       </div>
       <div class="rp-emp-bar"><div class="rp-emp-bar-fill" style="width:${pct}%"></div></div>
     </div>`;
@@ -2795,6 +2869,7 @@ function generarPDFReportes() {
       <div class="pp-kpi pp-pordvencer"><div class="k-label">Pendiente</div><div class="k-val">${fmt(pend)}</div></div>
       <div class="pp-kpi pp-venc"><div class="k-label">Vencido</div><div class="k-val">${vencido>0?fmt(vencido):'$0'}</div></div>
       <div class="pp-kpi"><div class="k-label">Facturas</div><div class="k-val">${base.length}</div></div>
+      ${totalUsd>0?`<div class="pp-kpi"><div class="k-label">Total en USD</div><div class="k-val">US$${totalUsd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div></div>`:''}
     </div>
 
     <p class="rp-section-label">Gráficas del período</p>
@@ -2857,6 +2932,13 @@ function actualizarBannerReporte() {
     `<strong>${prioIds.size}</strong> factura${prioIds.size!==1?'s':''} en prioridad`
     + (venc.length ? ` &nbsp;·&nbsp; <span style="color:var(--rojo)">${venc.length} vencida${venc.length!==1?'s':''}</span>` : '');
   $('prioReporteMonto').textContent = fmt(total);
+
+  // Badge USD: si entre las facturas de prioridad hay alguna en dólares, se muestra su suma.
+  const usdRegs = regs.filter(r=>r.usd==='USD' && r.total_usd!=null);
+  const totalUsd = usdRegs.reduce((s,r)=>s+(parseFloat(r.total_usd)||0), 0);
+  $('prioUsdLine').style.display = usdRegs.length > 0 ? 'flex' : 'none';
+  $('prioUsdMonto').textContent = `US$${totalUsd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+
   bar.style.display = 'flex';
 }
 
@@ -2976,7 +3058,8 @@ function generarPDFPrioridad() {
         <td style="white-space:nowrap">${fmtDate(r.fecha_vencimiento)}</td>
         <td class="r" style="white-space:nowrap;${esVenc?'color:var(--rojo);font-weight:600':'color:var(--suave)'}">${esVenc?dias:'—'}</td>
         <td class="r mono" style="white-space:nowrap">${fmt(saldo)}${abonado>0?`<br><span style="font-size:8.5px;color:#8a6a18;font-weight:600">abonado ${fmt(abonado)}</span>`:''}</td>
-        <td style="text-align:center"><span style="background:var(--dorado-xs);padding:2px 7px;border-radius:2px;font-size:8.5px;letter-spacing:.05em">${r.usd||'MXN'}</span>${(r.usd==='USD'&&r.total_usd!=null)?`<br><span style="font-size:8.5px;color:#8a6a18;font-weight:600">US$${parseFloat(r.total_usd).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span>`:''}</td>
+        <td style="text-align:center"><span style="background:var(--dorado-xs);padding:2px 7px;border-radius:2px;font-size:8.5px;letter-spacing:.05em">${r.usd||'MXN'}</span></td>
+        <td class="r mono" style="white-space:nowrap">${(r.usd==='USD'&&r.total_usd!=null)?('US$'+parseFloat(r.total_usd).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})):'—'}</td>
         <td style="color:var(--suave);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.servicio||'—'}</td>
         <td style="white-space:nowrap"><span class="badge ${bCls}">${bTxt}</span></td>
         <td style="color:var(--suave);white-space:nowrap">${r.solicita||r.periodo_gasto||'—'}</td>
@@ -3017,11 +3100,11 @@ function generarPDFPrioridad() {
       <div class="pp-tabla-wrap">
         <table>
           <thead><tr>
-            <th>Proveedor</th><th>No. Factura</th><th>Empresa</th><th>F. Factura</th><th>Vencimiento</th><th class="r">Días</th><th class="r">Saldo</th><th style="text-align:center">Moneda</th><th>Servicio</th><th>Status</th><th>Solicita</th><th>Cta. Pago</th><th>Obs.</th>
+            <th>Proveedor</th><th>No. Factura</th><th>Empresa</th><th>F. Factura</th><th>Vencimiento</th><th class="r">Días</th><th class="r">Saldo</th><th style="text-align:center">Moneda</th><th class="r">Monto USD</th><th>Servicio</th><th>Status</th><th>Solicita</th><th>Cta. Pago</th><th>Obs.</th>
           </tr></thead>
           <tbody>
             ${filas}
-            <tr class="pp-total"><td colspan="6">Total general</td><td class="r">${fmt(acumulado)}</td><td colspan="6" style="text-align:right;color:var(--dorado);font-family:'EB Garamond',serif;font-size:14px">${totalUsd>0?`Total en USD&nbsp;&nbsp;US$${totalUsd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`:''}</td></tr>
+            <tr class="pp-total"><td colspan="6">Total general</td><td class="r">${fmt(acumulado)}</td><td></td><td class="r">${totalUsd>0?`<div class="usd-cell-lbl">Total USD</div><div class="usd-cell-val">US$${totalUsd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>`:''}</td><td colspan="5"></td></tr>
           </tbody>
         </table>
       </div>
