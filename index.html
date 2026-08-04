@@ -136,6 +136,30 @@ header h1 em{font-style:italic;color:var(--dorado)}
 .filtro-btn{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;padding:5px 13px;border-radius:2px;border:1px solid var(--linea);background:none;color:var(--suave);cursor:pointer;transition:.15s}
 .filtro-btn:hover{border-color:var(--dorado);color:var(--cafe)}
 .filtro-btn.active{background:var(--cafe);color:var(--crema);border-color:var(--cafe)}
+
+/* ── FILTRO SOLICITA (desplegable multi-selección) ── */
+.filtro-solicita-wrap{position:relative}
+.filtro-solicita-btn{display:inline-flex;align-items:center;gap:6px;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;padding:5px 13px;border-radius:2px;border:1px solid var(--linea);background:none;color:var(--suave);cursor:pointer;transition:.15s;font-family:'Inter',sans-serif}
+.filtro-solicita-btn:hover{border-color:var(--dorado);color:var(--cafe)}
+.filtro-solicita-btn.active{background:var(--dorado-xs);border-color:var(--dorado-sm);color:#7a6018;font-weight:600}
+.filtro-solicita-btn .fs-count{background:var(--cafe);color:var(--crema);border-radius:8px;padding:1px 6px;font-size:8px;letter-spacing:0}
+.filtro-solicita-btn.active .fs-count{background:var(--dorado);color:#3a2c08}
+.filtro-solicita-btn .fs-car{font-size:7px;opacity:.6;margin-left:1px}
+
+.solicita-dropdown{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:80;background:#fff;border:1px solid var(--linea);border-radius:var(--r);box-shadow:var(--sh-lg);width:260px;overflow:hidden}
+.solicita-dropdown.open{display:block}
+.sd-search{padding:10px 10px 8px;border-bottom:1px solid var(--linea)}
+.sd-search input{width:100%;border:1px solid var(--linea);border-radius:3px;padding:7px 10px;font-size:11px;font-family:'Inter',sans-serif;color:var(--texto);background:var(--crema);outline:none;transition:.15s}
+.sd-search input:focus{border-color:var(--dorado);background:#fff}
+.sd-list{max-height:230px;overflow-y:auto;padding:4px 0}
+.sd-item{display:flex;align-items:center;gap:9px;padding:7px 14px;font-size:11px;color:var(--texto);cursor:pointer;transition:.12s}
+.sd-item:hover{background:var(--cafe-xs)}
+.sd-item input[type=checkbox]{accent-color:var(--cafe);width:14px;height:14px;cursor:pointer;flex:0 0 auto}
+.sd-item span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sd-all{border-bottom:1px solid var(--linea);font-weight:600;color:var(--cafe);background:var(--crema-dark)}
+.sd-empty{padding:16px 14px;font-size:10.5px;color:var(--suave);text-align:center}
+.sd-actions{display:flex;justify-content:flex-end;gap:8px;padding:10px 12px;border-top:1px solid var(--linea);background:var(--crema-dark)}
+.sd-btn{padding:7px 15px;font-size:8.5px;min-width:0}
 .tabla-scroll{overflow-x:auto}
 #tab-facturas table{width:100%;border-collapse:collapse;table-layout:fixed}
 table{width:100%;border-collapse:collapse}
@@ -689,6 +713,25 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
         <button class="filtro-btn" data-filtro="vencida">Vencidas</button>
         <button class="filtro-btn" data-filtro="pagada">Pagadas</button>
         <button class="filtro-btn filtro-prio" data-filtro="prioridad" id="filtroPrioBtn">☆ Prioridad</button>
+        <div class="filtro-solicita-wrap" id="filtroSolicitaWrap">
+          <button type="button" class="filtro-solicita-btn" id="filtroSolicitaBtn">
+            Solicita <span class="fs-count" id="filtroSolicitaCount" style="display:none">0</span><span class="fs-car">▾</span>
+          </button>
+          <div class="solicita-dropdown" id="solicitaDropdown">
+            <div class="sd-search"><input type="text" id="solicitaBuscarInput" placeholder="Buscar…" autocomplete="off"></div>
+            <div class="sd-list">
+              <label class="sd-item sd-all">
+                <input type="checkbox" id="solicitaTodoCheck">
+                <span>(Seleccionar todo)</span>
+              </label>
+              <div id="solicitaItems"></div>
+            </div>
+            <div class="sd-actions">
+              <button type="button" class="btn-cancel sd-btn" id="solicitaCancelar">Cancelar</button>
+              <button type="button" class="btn-save sd-btn" id="solicitaAceptar">Aceptar</button>
+            </div>
+          </div>
+        </div>
       </div>
       <!-- Banner que aparece solo cuando el filtro "Prioridad" está activo -->
       <div class="prio-reporte-bar" id="prioReporteBar" style="display:none">
@@ -1125,6 +1168,9 @@ let editandoProveedorId = null;
 let confirmContexto = 'factura'; // 'factura' | 'proveedor' | 'abono'
 let abonoIdPendiente = null; // guarda el id del abono a eliminar mientras se confirma
 let filtroActual = 'todas';
+let solicitaSeleccion = new Set();     // aplicado: vacío = sin filtro (todas las personas)
+let solicitaSeleccionTemp = new Set(); // borrador mientras el desplegable está abierto
+let solicitaTodos = [];                // universo de nombres únicos disponibles ahora mismo
 let empresaActual= 'todas';
 let anyoActual   = 'todos';
 let mesActual    = 'todos';
@@ -1418,6 +1464,10 @@ function regsFiltrados() {
     } else if (filtroActual === 'pendiente') {
       if (r.status === 'pagada') return false;
     } else if (filtroActual !== 'todas' && r.status !== filtroActual) return false;
+    if (solicitaSeleccion.size > 0) {
+      const nombre = (r.solicita||r.periodo_gasto||'').trim() || '—';
+      if (!solicitaSeleccion.has(nombre)) return false;
+    }
     if (busqueda) {
       const q = busqueda.toLowerCase();
       return (r.proveedor||'').toLowerCase().includes(q)  ||
@@ -2433,6 +2483,105 @@ document.querySelectorAll('.filtro-btn').forEach(b=>b.addEventListener('click',(
   b.classList.add('active'); filtroActual=b.dataset.filtro; pagActual=1; renderFacturas();
 }));
 $('buscarFactura').addEventListener('input',e=>{ busqueda=e.target.value.trim(); pagActual=1; renderFacturas(); });
+
+// ═══════════════════════════════════════════════════════
+//  FILTRO "SOLICITA" (desplegable de selección múltiple)
+//  Independiente del filtro de status: se combina con Todas/Pendientes/
+//  Vencidas/Pagadas/Prioridad, la búsqueda y Empresa/Año/Mes.
+//  solicitaSeleccion vacío = sin filtro (se ven todas las personas).
+// ═══════════════════════════════════════════════════════
+function escSolicita(v){ return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function nombresSolicitaUnicos() {
+  return [...new Set(regsBase().map(r => (r.solicita||r.periodo_gasto||'').trim() || '—').filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,'es'));
+}
+
+function pintarSolicitaLista(q) {
+  const texto = (q||'').trim().toLowerCase();
+  const visibles = texto ? solicitaTodos.filter(n=>n.toLowerCase().includes(texto)) : solicitaTodos;
+  $('solicitaItems').innerHTML = visibles.length ? visibles.map(n=>{
+    const marcado = solicitaSeleccionTemp.has(n);
+    return `<label class="sd-item"><input type="checkbox" class="sd-check" value="${escSolicita(n)}" ${marcado?'checked':''}><span>${escSolicita(n)}</span></label>`;
+  }).join('') : `<div class="sd-empty">Sin resultados</div>`;
+  actualizarCheckTodoSolicita();
+}
+
+function actualizarCheckTodoSolicita() {
+  const total = solicitaTodos.length;
+  const marcados = solicitaTodos.filter(n=>solicitaSeleccionTemp.has(n)).length;
+  const chk = $('solicitaTodoCheck');
+  chk.checked = total>0 && marcados===total;
+  chk.indeterminate = marcados>0 && marcados<total;
+}
+
+function actualizarBotonSolicita() {
+  const activo = solicitaSeleccion.size>0;
+  $('filtroSolicitaBtn').classList.toggle('active', activo);
+  $('filtroSolicitaCount').style.display = activo ? '' : 'none';
+  $('filtroSolicitaCount').textContent = solicitaSeleccion.size;
+}
+
+function abrirSolicitaDropdown() {
+  solicitaTodos = nombresSolicitaUnicos();
+  // Punto de partida del borrador: lo ya aplicado, o "todo seleccionado" si no hay filtro activo.
+  solicitaSeleccionTemp = solicitaSeleccion.size>0
+    ? new Set([...solicitaSeleccion].filter(n=>solicitaTodos.includes(n)))
+    : new Set(solicitaTodos);
+  $('solicitaBuscarInput').value = '';
+  pintarSolicitaLista('');
+  $('solicitaDropdown').classList.add('open');
+  $('solicitaBuscarInput').focus();
+}
+
+function cerrarSolicitaDropdown() {
+  $('solicitaDropdown').classList.remove('open');
+}
+
+$('filtroSolicitaBtn').addEventListener('click', e=>{
+  e.stopPropagation();
+  const yaAbierto = $('solicitaDropdown').classList.contains('open');
+  cerrarSolicitaDropdown();
+  if (!yaAbierto) abrirSolicitaDropdown();
+});
+
+$('solicitaDropdown').addEventListener('click', e=> e.stopPropagation());
+
+$('solicitaBuscarInput').addEventListener('input', e=> pintarSolicitaLista(e.target.value));
+
+$('solicitaItems').addEventListener('change', e=>{
+  if (!e.target.classList.contains('sd-check')) return;
+  const n = e.target.value;
+  if (e.target.checked) solicitaSeleccionTemp.add(n); else solicitaSeleccionTemp.delete(n);
+  actualizarCheckTodoSolicita();
+});
+
+$('solicitaTodoCheck').addEventListener('change', e=>{
+  if (e.target.checked) solicitaTodos.forEach(n=>solicitaSeleccionTemp.add(n));
+  else solicitaTodos.forEach(n=>solicitaSeleccionTemp.delete(n));
+  pintarSolicitaLista($('solicitaBuscarInput').value);
+});
+
+$('solicitaCancelar').addEventListener('click', ()=> cerrarSolicitaDropdown());
+
+$('solicitaAceptar').addEventListener('click', ()=>{
+  // Si quedó todo marcado, equivale a "sin filtro" (se guarda vacío).
+  solicitaSeleccion = (solicitaSeleccionTemp.size >= solicitaTodos.length)
+    ? new Set()
+    : new Set(solicitaSeleccionTemp);
+  actualizarBotonSolicita();
+  cerrarSolicitaDropdown();
+  pagActual = 1;
+  renderFacturas();
+});
+
+document.addEventListener('click', e=>{
+  if (!$('solicitaDropdown').classList.contains('open')) return;
+  if (!$('filtroSolicitaWrap').contains(e.target)) cerrarSolicitaDropdown();
+});
+document.addEventListener('keydown', e=>{
+  if (e.key==='Escape') cerrarSolicitaDropdown();
+});
 $('pvScroll').addEventListener('click', e=>{
   const card = e.target.closest('.pv-card');
   if (!card) return;
@@ -2606,6 +2755,17 @@ $('btnExportCSV').addEventListener('click',()=>{
 // ═══════════════════════════════════════════════════════
 const FILTRO_LABELS = {todas:'Todas',pendiente:'Pendientes',vencida:'Vencidas',pagada:'Pagadas',prioridad:'Prioridad'};
 
+// Arma el texto del filtro activo incluyendo, si aplica, a quién(es) se filtró en "Solicita".
+function filtroTagCompleto() {
+  let tag = FILTRO_LABELS[filtroActual] || 'Todas';
+  if (solicitaSeleccion.size > 0) {
+    const nombres = [...solicitaSeleccion];
+    const detalle = nombres.length<=2 ? nombres.join(', ') : `${nombres.length} personas`;
+    tag += ` · Solicita: ${detalle}`;
+  }
+  return tag;
+}
+
 $('btnExportFacturasCSV').addEventListener('click',()=>{
   const regs = sortRegs(regsFiltrados());
   if (!regs.length) { toast('No hay facturas con este filtro','err'); return; }
@@ -2634,15 +2794,16 @@ $('btnExportFacturasCSV').addEventListener('click',()=>{
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
   const filtroTag = FILTRO_LABELS[filtroActual] || 'Filtro';
-  a.download='CxP_Facturas_'+filtroTag+'_'+new Date().toISOString().split('T')[0]+'.csv';
+  const sufijoArchivo = filtroTag + (solicitaSeleccion.size>0 ? '_Solicita' : '');
+  a.download='CxP_Facturas_'+sufijoArchivo+'_'+new Date().toISOString().split('T')[0]+'.csv';
   a.click();
-  toast(`CSV exportado — ${regs.length} facturas (${filtroTag})`,'ok');
+  toast(`CSV exportado — ${regs.length} facturas (${filtroTagCompleto()})`,'ok');
 });
 
 function generarPDFFacturasFiltradas() {
   const regs = sortRegs(regsFiltrados());
   if (!regs.length) { toast('No hay facturas con este filtro','err'); return; }
-  const filtroTag  = FILTRO_LABELS[filtroActual] || 'Todas';
+  const filtroTag  = filtroTagCompleto();
   // Escapa caracteres especiales (&, <, >, comillas) para que un dato con esos símbolos
   // (ej. "Fernández & Asociados") no rompa la estructura de la tabla del PDF.
   const esc = v => String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
