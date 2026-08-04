@@ -137,29 +137,33 @@ header h1 em{font-style:italic;color:var(--dorado)}
 .filtro-btn:hover{border-color:var(--dorado);color:var(--cafe)}
 .filtro-btn.active{background:var(--cafe);color:var(--crema);border-color:var(--cafe)}
 
-/* ── FILTRO SOLICITA (desplegable multi-selección) ── */
-.filtro-solicita-wrap{position:relative}
-.filtro-solicita-btn{display:inline-flex;align-items:center;gap:6px;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;padding:5px 13px;border-radius:2px;border:1px solid var(--linea);background:none;color:var(--suave);cursor:pointer;transition:.15s;font-family:'Inter',sans-serif}
-.filtro-solicita-btn:hover{border-color:var(--dorado);color:var(--cafe)}
-.filtro-solicita-btn.active{background:var(--dorado-xs);border-color:var(--dorado-sm);color:#7a6018;font-weight:600}
-.filtro-solicita-btn .fs-count{background:var(--cafe);color:var(--crema);border-radius:8px;padding:1px 6px;font-size:8px;letter-spacing:0}
-.filtro-solicita-btn.active .fs-count{background:var(--dorado);color:#3a2c08}
-.filtro-solicita-btn .fs-car{font-size:7px;opacity:.6;margin-left:1px}
+/* ── FILTRO "SOLICITA" integrado en el encabezado de la columna ── */
+.th-solicita{position:relative}
+.th-solicita-inner{display:flex;align-items:center;gap:3px;cursor:default}
+.th-filtro-ic{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border:none;background:none;padding:0;cursor:pointer;color:var(--suave);opacity:.55;transition:.15s;border-radius:2px;vertical-align:middle}
+.th-filtro-ic:hover{opacity:1;color:var(--cafe);background:var(--cafe-xs)}
+.th-filtro-ic.filtro-on{opacity:1;color:var(--dorado)}
+.th-filtro-ic svg{width:10px;height:10px;display:block}
 
-.solicita-dropdown{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:80;background:#fff;border:1px solid var(--linea);border-radius:var(--r);box-shadow:var(--sh-lg);width:260px;overflow:hidden}
+.solicita-dropdown{display:none;position:fixed;z-index:200;background:#fff;border:1px solid var(--linea);border-radius:var(--r);box-shadow:var(--sh-lg);width:230px;overflow:hidden}
 .solicita-dropdown.open{display:block}
-.sd-search{padding:10px 10px 8px;border-bottom:1px solid var(--linea)}
-.sd-search input{width:100%;border:1px solid var(--linea);border-radius:3px;padding:7px 10px;font-size:11px;font-family:'Inter',sans-serif;color:var(--texto);background:var(--crema);outline:none;transition:.15s}
+.sd-sort{padding:5px 0;border-bottom:1px solid var(--linea)}
+.sd-sort-btn{display:flex;align-items:center;gap:8px;width:100%;border:none;background:none;padding:7px 14px;font-size:10.5px;color:var(--texto);cursor:pointer;text-align:left;font-family:'Inter',sans-serif;transition:.12s}
+.sd-sort-btn:hover{background:var(--cafe-xs)}
+.sd-sort-btn.on{color:var(--cafe);font-weight:600}
+.sd-sort-btn .sd-sort-ic{font-size:10px;opacity:.7;width:12px}
+.sd-search{padding:8px 10px 7px;border-bottom:1px solid var(--linea)}
+.sd-search input{width:100%;border:1px solid var(--linea);border-radius:3px;padding:6px 9px;font-size:10.5px;font-family:'Inter',sans-serif;color:var(--texto);background:var(--crema);outline:none;transition:.15s}
 .sd-search input:focus{border-color:var(--dorado);background:#fff}
-.sd-list{max-height:230px;overflow-y:auto;padding:4px 0}
-.sd-item{display:flex;align-items:center;gap:9px;padding:7px 14px;font-size:11px;color:var(--texto);cursor:pointer;transition:.12s}
+.sd-list{max-height:190px;overflow-y:auto;padding:4px 0}
+.sd-item{display:flex;align-items:center;gap:9px;padding:6px 14px;font-size:10.5px;color:var(--texto);cursor:pointer;transition:.12s}
 .sd-item:hover{background:var(--cafe-xs)}
-.sd-item input[type=checkbox]{accent-color:var(--cafe);width:14px;height:14px;cursor:pointer;flex:0 0 auto}
+.sd-item input[type=checkbox]{accent-color:var(--cafe);width:13px;height:13px;cursor:pointer;flex:0 0 auto}
 .sd-item span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sd-all{border-bottom:1px solid var(--linea);font-weight:600;color:var(--cafe);background:var(--crema-dark)}
-.sd-empty{padding:16px 14px;font-size:10.5px;color:var(--suave);text-align:center}
-.sd-actions{display:flex;justify-content:flex-end;gap:8px;padding:10px 12px;border-top:1px solid var(--linea);background:var(--crema-dark)}
-.sd-btn{padding:7px 15px;font-size:8.5px;min-width:0}
+.sd-empty{padding:14px;font-size:10px;color:var(--suave);text-align:center}
+.sd-actions{display:flex;justify-content:flex-end;gap:7px;padding:9px 11px;border-top:1px solid var(--linea);background:var(--crema-dark)}
+.sd-btn{padding:6px 14px;font-size:8.5px;min-width:0}
 .tabla-scroll{overflow-x:auto}
 #tab-facturas table{width:100%;border-collapse:collapse;table-layout:fixed}
 table{width:100%;border-collapse:collapse}
@@ -713,25 +717,6 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
         <button class="filtro-btn" data-filtro="vencida">Vencidas</button>
         <button class="filtro-btn" data-filtro="pagada">Pagadas</button>
         <button class="filtro-btn filtro-prio" data-filtro="prioridad" id="filtroPrioBtn">☆ Prioridad</button>
-        <div class="filtro-solicita-wrap" id="filtroSolicitaWrap">
-          <button type="button" class="filtro-solicita-btn" id="filtroSolicitaBtn">
-            Solicita <span class="fs-count" id="filtroSolicitaCount" style="display:none">0</span><span class="fs-car">▾</span>
-          </button>
-          <div class="solicita-dropdown" id="solicitaDropdown">
-            <div class="sd-search"><input type="text" id="solicitaBuscarInput" placeholder="Buscar…" autocomplete="off"></div>
-            <div class="sd-list">
-              <label class="sd-item sd-all">
-                <input type="checkbox" id="solicitaTodoCheck">
-                <span>(Seleccionar todo)</span>
-              </label>
-              <div id="solicitaItems"></div>
-            </div>
-            <div class="sd-actions">
-              <button type="button" class="btn-cancel sd-btn" id="solicitaCancelar">Cancelar</button>
-              <button type="button" class="btn-save sd-btn" id="solicitaAceptar">Aceptar</button>
-            </div>
-          </div>
-        </div>
       </div>
       <!-- Banner que aparece solo cuando el filtro "Prioridad" está activo -->
       <div class="prio-reporte-bar" id="prioReporteBar" style="display:none">
@@ -762,7 +747,32 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
             <th class="th-sort" style="width:6%" data-col="fecha_vencimiento">Vence <span class="s-ic"></span></th>
             <th class="th-sort" style="width:6%" data-col="fecha_pago">F. Pago <span class="s-ic"></span></th>
             <th class="th-sort" style="width:8%" data-col="status">Status <span class="s-ic"></span></th>
-            <th class="th-sort" style="width:6.8%" data-col="solicita">Solicita <span class="s-ic"></span></th>
+            <th class="th-solicita" style="width:6.8%" data-col="solicita">
+              <div class="th-solicita-inner">
+                <span>Solicita</span>
+                <button type="button" class="th-filtro-ic" id="filtroSolicitaBtn" title="Ordenar / filtrar">
+                  <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5h14L9.5 9v4.8l-3-1.7V9L1 2.5z"/></svg>
+                </button>
+              </div>
+              <div class="solicita-dropdown" id="solicitaDropdown">
+                <div class="sd-sort">
+                  <button type="button" class="sd-sort-btn" id="solicitaSortAsc"><span class="sd-sort-ic">↑</span> Ordenar A → Z</button>
+                  <button type="button" class="sd-sort-btn" id="solicitaSortDesc"><span class="sd-sort-ic">↓</span> Ordenar Z → A</button>
+                </div>
+                <div class="sd-search"><input type="text" id="solicitaBuscarInput" placeholder="Buscar…" autocomplete="off"></div>
+                <div class="sd-list">
+                  <label class="sd-item sd-all">
+                    <input type="checkbox" id="solicitaTodoCheck">
+                    <span>(Seleccionar todo)</span>
+                  </label>
+                  <div id="solicitaItems"></div>
+                </div>
+                <div class="sd-actions">
+                  <button type="button" class="btn-cancel sd-btn" id="solicitaCancelar">Cancelar</button>
+                  <button type="button" class="btn-save sd-btn" id="solicitaAceptar">Aceptar</button>
+                </div>
+              </div>
+            </th>
             <th class="th-sort" style="width:6.5%" data-col="empresa">Empresa <span class="s-ic"></span></th>
           </tr></thead>
           <tbody id="facturasTbody">
@@ -2485,9 +2495,8 @@ document.querySelectorAll('.filtro-btn').forEach(b=>b.addEventListener('click',(
 $('buscarFactura').addEventListener('input',e=>{ busqueda=e.target.value.trim(); pagActual=1; renderFacturas(); });
 
 // ═══════════════════════════════════════════════════════
-//  FILTRO "SOLICITA" (desplegable de selección múltiple)
-//  Independiente del filtro de status: se combina con Todas/Pendientes/
-//  Vencidas/Pagadas/Prioridad, la búsqueda y Empresa/Año/Mes.
+//  FILTRO/ORDEN "SOLICITA" — menú desplegable colgado del icono
+//  en el propio encabezado de la columna (no es un filtro aparte).
 //  solicitaSeleccion vacío = sin filtro (se ven todas las personas).
 // ═══════════════════════════════════════════════════════
 function escSolicita(v){ return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -2515,11 +2524,29 @@ function actualizarCheckTodoSolicita() {
   chk.indeterminate = marcados>0 && marcados<total;
 }
 
-function actualizarBotonSolicita() {
-  const activo = solicitaSeleccion.size>0;
-  $('filtroSolicitaBtn').classList.toggle('active', activo);
-  $('filtroSolicitaCount').style.display = activo ? '' : 'none';
-  $('filtroSolicitaCount').textContent = solicitaSeleccion.size;
+// El icono se resalta si hay un filtro de personas activo y/o si el orden actual es por esta columna.
+function actualizarIconoSolicita() {
+  const activo = solicitaSeleccion.size>0 || sortCol==='solicita';
+  $('filtroSolicitaBtn').classList.toggle('filtro-on', activo);
+  $('solicitaSortAsc').classList.toggle('on', sortCol==='solicita' && sortDir==='asc');
+  $('solicitaSortDesc').classList.toggle('on', sortCol==='solicita' && sortDir==='desc');
+}
+
+function posicionarSolicitaDropdown() {
+  const btn = $('filtroSolicitaBtn');
+  const dd  = $('solicitaDropdown');
+  const r   = btn.getBoundingClientRect();
+  const anchoDD = 230;
+  let left = r.right - anchoDD;
+  if (left < 8) left = 8;
+  if (left + anchoDD > window.innerWidth - 8) left = window.innerWidth - anchoDD - 8;
+  dd.style.left = left + 'px';
+  dd.style.top  = (r.bottom + 6) + 'px';
+  // Si no cabe hacia abajo, se abre hacia arriba del icono.
+  const alturaEstim = Math.min(dd.scrollHeight || 320, 360);
+  if (r.bottom + 6 + alturaEstim > window.innerHeight) {
+    dd.style.top = Math.max(8, r.top - alturaEstim - 6) + 'px';
+  }
 }
 
 function abrirSolicitaDropdown() {
@@ -2531,6 +2558,7 @@ function abrirSolicitaDropdown() {
   $('solicitaBuscarInput').value = '';
   pintarSolicitaLista('');
   $('solicitaDropdown').classList.add('open');
+  posicionarSolicitaDropdown();
   $('solicitaBuscarInput').focus();
 }
 
@@ -2546,6 +2574,15 @@ $('filtroSolicitaBtn').addEventListener('click', e=>{
 });
 
 $('solicitaDropdown').addEventListener('click', e=> e.stopPropagation());
+
+$('solicitaSortAsc').addEventListener('click', ()=>{
+  sortCol='solicita'; sortDir='asc'; updateSortHeaders(); actualizarIconoSolicita();
+  cerrarSolicitaDropdown(); pagActual=1; renderFacturas();
+});
+$('solicitaSortDesc').addEventListener('click', ()=>{
+  sortCol='solicita'; sortDir='desc'; updateSortHeaders(); actualizarIconoSolicita();
+  cerrarSolicitaDropdown(); pagActual=1; renderFacturas();
+});
 
 $('solicitaBuscarInput').addEventListener('input', e=> pintarSolicitaLista(e.target.value));
 
@@ -2569,7 +2606,7 @@ $('solicitaAceptar').addEventListener('click', ()=>{
   solicitaSeleccion = (solicitaSeleccionTemp.size >= solicitaTodos.length)
     ? new Set()
     : new Set(solicitaSeleccionTemp);
-  actualizarBotonSolicita();
+  actualizarIconoSolicita();
   cerrarSolicitaDropdown();
   pagActual = 1;
   renderFacturas();
@@ -2577,11 +2614,13 @@ $('solicitaAceptar').addEventListener('click', ()=>{
 
 document.addEventListener('click', e=>{
   if (!$('solicitaDropdown').classList.contains('open')) return;
-  if (!$('filtroSolicitaWrap').contains(e.target)) cerrarSolicitaDropdown();
+  if (!e.target.closest('.th-solicita')) cerrarSolicitaDropdown();
 });
 document.addEventListener('keydown', e=>{
   if (e.key==='Escape') cerrarSolicitaDropdown();
 });
+window.addEventListener('resize', ()=>{ if ($('solicitaDropdown').classList.contains('open')) posicionarSolicitaDropdown(); });
+window.addEventListener('scroll', ()=>{ if ($('solicitaDropdown').classList.contains('open')) posicionarSolicitaDropdown(); }, true);
 $('pvScroll').addEventListener('click', e=>{
   const card = e.target.closest('.pv-card');
   if (!card) return;
