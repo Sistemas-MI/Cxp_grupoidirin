@@ -55,7 +55,7 @@ header h1 em{font-style:italic;color:var(--dorado)}
 .filtros-bar .divv{width:1px;height:20px;background:var(--linea)}
 
 /* ── CONTENIDO ── */
-.contenido{padding:22px 24px 0;max-width:1520px;margin:0 auto}
+.contenido{padding:22px 24px 0;max-width:1680px;margin:0 auto}
 
 /* ── LABEL ── */
 .sec-label{font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:var(--suave);margin-bottom:10px;padding-left:1px}
@@ -165,7 +165,7 @@ header h1 em{font-style:italic;color:var(--dorado)}
 .sd-actions{display:flex;justify-content:flex-end;gap:7px;padding:9px 11px;border-top:1px solid var(--linea);background:var(--crema-dark)}
 .sd-btn{padding:6px 14px;font-size:8.5px;min-width:0}
 .tabla-scroll{overflow-x:auto}
-#tab-facturas table{width:100%;border-collapse:collapse;table-layout:fixed}
+#tab-facturas table{width:100%;border-collapse:collapse;table-layout:fixed;min-width:1360px}
 table{width:100%;border-collapse:collapse}
 thead tr{background:var(--crema-dark)}
 th{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--suave);padding:11px 12px;text-align:left;font-weight:400;border-bottom:1px solid var(--linea);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -735,17 +735,17 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
         <table id="tablaFacturas">
           <thead><tr>
             <th style="width:2.2%;padding:11px 4px 11px 10px" title="Prioridad"></th>
-            <th class="th-sort" style="width:4.5%" data-col="folio">Folio <span class="s-ic"></span></th>
-            <th class="th-sort" style="width:9%" data-col="proveedor">Proveedor <span class="s-ic"></span></th>
-            <th class="th-sort" style="width:7.5%" data-col="no_factura">Factura <span class="s-ic"></span></th>
-            <th class="th-sort" style="width:6.5%" data-col="fecha_factura">F. Factura <span class="s-ic"></span></th>
+            <th class="th-sort" style="width:4%" data-col="folio">Folio <span class="s-ic"></span></th>
+            <th class="th-sort" style="width:14%" data-col="proveedor">Proveedor <span class="s-ic"></span></th>
+            <th class="th-sort" style="width:7%" data-col="no_factura">Factura <span class="s-ic"></span></th>
+            <th class="th-sort" style="width:6%" data-col="fecha_factura">F. Factura <span class="s-ic"></span></th>
             <th class="th-sort r" style="width:8.5%" data-col="total_mn">Importe <span class="s-ic"></span></th>
             <th class="th-sort r" style="width:8.5%" data-col="saldo">Saldo <span class="s-ic"></span></th>
-            <th class="th-sort" style="width:6%" data-col="usd">Moneda <span class="s-ic"></span></th>
-            <th class="th-sort r" style="width:7%" data-col="total_usd">Monto USD <span class="s-ic"></span></th>
-            <th class="th-sort" style="width:7%" data-col="servicio">Servicio <span class="s-ic"></span></th>
-            <th class="th-sort" style="width:6%" data-col="fecha_vencimiento">Vence <span class="s-ic"></span></th>
-            <th class="th-sort" style="width:6%" data-col="fecha_pago">F. Pago <span class="s-ic"></span></th>
+            <th class="th-sort" style="width:5%" data-col="usd">Moneda <span class="s-ic"></span></th>
+            <th class="th-sort r" style="width:6.5%" data-col="total_usd">Monto USD <span class="s-ic"></span></th>
+            <th class="th-sort" style="width:6%" data-col="servicio">Servicio <span class="s-ic"></span></th>
+            <th class="th-sort" style="width:5.5%" data-col="fecha_vencimiento">Vence <span class="s-ic"></span></th>
+            <th class="th-sort" style="width:5.5%" data-col="fecha_pago">F. Pago <span class="s-ic"></span></th>
             <th class="th-sort" style="width:8%" data-col="status">Status <span class="s-ic"></span></th>
             <th class="th-solicita" style="width:6.8%" data-col="solicita">
               <div class="th-solicita-inner">
@@ -1729,7 +1729,7 @@ function renderFacturas() {
     const saldado= r.status==='pagada' || saldo<=0;
     return `<tr class="fila-data${esVenc?' vencido':''}" data-id="${r.id}">
       <td style="font-size:10.5px;color:var(--suave);white-space:nowrap">${r.folio||'—'}</td>
-      <td class="td-prov" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><b>${r.proveedor||'—'}</b></td>
+      <td class="td-prov" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${(r.proveedor||'').replace(/"/g,'&quot;')}"><b>${r.proveedor||'—'}</b></td>
       <td style="font-size:10.5px;color:var(--suave);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.no_factura||'—'}</td>
       <td style="font-size:10.5px;color:var(--suave)">${fmtDate(r.fecha_factura)}</td>
       <td class="r mono">${fmt(r.total_mn)}</td>
@@ -2533,20 +2533,48 @@ function actualizarIconoSolicita() {
 }
 
 function posicionarSolicitaDropdown() {
-  const btn = $('filtroSolicitaBtn');
-  const dd  = $('solicitaDropdown');
-  const r   = btn.getBoundingClientRect();
+  const btn  = $('filtroSolicitaBtn');
+  const dd   = $('solicitaDropdown');
+  const list = dd.querySelector('.sd-list');
+  const r    = btn.getBoundingClientRect();
   const anchoDD = 230;
+  const margen  = 10;
+
   let left = r.right - anchoDD;
   if (left < 8) left = 8;
   if (left + anchoDD > window.innerWidth - 8) left = window.innerWidth - anchoDD - 8;
   dd.style.left = left + 'px';
-  dd.style.top  = (r.bottom + 6) + 'px';
-  // Si no cabe hacia abajo, se abre hacia arriba del icono.
-  const alturaEstim = Math.min(dd.scrollHeight || 320, 360);
-  if (r.bottom + 6 + alturaEstim > window.innerHeight) {
-    dd.style.top = Math.max(8, r.top - alturaEstim - 6) + 'px';
+
+  // Altura de las secciones fijas (ordenar + buscador + acciones), midiendo el DOM real
+  // en vez de estimar — así el pie con Aceptar/Cancelar siempre cabe en pantalla,
+  // sin importar cuántos nombres tenga la lista.
+  list.style.maxHeight = 'none';
+  const alturaFija = dd.querySelector('.sd-sort').offsetHeight
+                    + dd.querySelector('.sd-search').offsetHeight
+                    + dd.querySelector('.sd-actions').offsetHeight
+                    + 2; // bordes
+  const alturaListaDeseada = Math.min(list.scrollHeight, 230);
+
+  const espacioAbajo  = window.innerHeight - r.bottom - margen*2;
+  const espacioArriba = r.top - margen*2;
+
+  let top, alturaLista;
+  if (espacioAbajo >= alturaFija + 80) {
+    // Abre hacia abajo del icono
+    top = r.bottom + 6;
+    alturaLista = Math.max(80, Math.min(alturaListaDeseada, espacioAbajo - alturaFija));
+  } else if (espacioArriba >= alturaFija + 80) {
+    // No cabe abajo: abre hacia arriba del icono
+    alturaLista = Math.max(80, Math.min(alturaListaDeseada, espacioArriba - alturaFija));
+    top = r.top - (alturaFija + alturaLista) - 6;
+  } else {
+    // Pantalla muy chica en ambos sentidos: usa el máximo espacio posible hacia abajo
+    top = margen;
+    alturaLista = Math.max(80, window.innerHeight - margen*2 - alturaFija);
   }
+
+  list.style.maxHeight = alturaLista + 'px';
+  dd.style.top = Math.max(margen, top) + 'px';
 }
 
 function abrirSolicitaDropdown() {
