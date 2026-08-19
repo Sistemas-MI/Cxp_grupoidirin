@@ -1133,6 +1133,22 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
   </div>
 </div>
 
+<!-- FECHA DEL REPORTE DE PRIORIDAD -->
+<div class="confirm-overlay" id="fechaReporteOverlay">
+  <div class="confirm-box">
+    <h4>Fecha del reporte</h4>
+    <p>Puedes ajustar la fecha que aparecerá impresa en la propuesta de pagos.</p>
+    <div class="form-group" style="text-align:left;margin-bottom:22px">
+      <label style="display:block;margin-bottom:7px">Fecha</label>
+      <input type="date" id="fechaReporteInput" style="width:100%;border:1px solid var(--linea);border-radius:3px;padding:9px 12px;font-family:'Inter',sans-serif;font-size:12px;color:var(--texto);background:var(--crema)">
+    </div>
+    <div class="confirm-btns">
+      <button class="btn-cancel" id="fechaReporteCancelar">Cancelar</button>
+      <button class="btn-save" id="fechaReporteGenerar">Generar reporte</button>
+    </div>
+  </div>
+</div>
+
 <!-- LOADING -->
 <div class="loading-overlay" id="loadingOverlay">
   <div class="spinner"></div>
@@ -3220,14 +3236,39 @@ $('prioClear').addEventListener('click', () => {
   idsAQuitar.forEach(id => guardarPrioridad(id, false));
 });
 
-// ── Botón "Generar reporte" del banner ──
+// ── Botón "Generar reporte" del banner: primero pide/permite ajustar la fecha ──
 $('btnGenerarReporte').addEventListener('click', () => {
   if (prioIds.size === 0) { toast('No hay facturas en prioridad','err'); return; }
-  generarPDFPrioridad();
+  abrirFechaReporteModal();
+});
+
+function pad2(n){ return String(n).padStart(2,'0'); }
+
+function abrirFechaReporteModal() {
+  const hoy = today();
+  // input type="date" necesita formato YYYY-MM-DD en horario local (no UTC) para no correrse un día.
+  $('fechaReporteInput').value = `${hoy.getFullYear()}-${pad2(hoy.getMonth()+1)}-${pad2(hoy.getDate())}`;
+  $('fechaReporteOverlay').className = 'confirm-overlay open';
+}
+function cerrarFechaReporteModal() {
+  $('fechaReporteOverlay').className = 'confirm-overlay';
+}
+$('fechaReporteCancelar').addEventListener('click', cerrarFechaReporteModal);
+$('fechaReporteOverlay').addEventListener('click', e=>{ if (e.target.id==='fechaReporteOverlay') cerrarFechaReporteModal(); });
+$('fechaReporteGenerar').addEventListener('click', () => {
+  const val = $('fechaReporteInput').value; // "YYYY-MM-DD"
+  let fechaElegida = today();
+  if (val) {
+    const [y,m,d] = val.split('-').map(Number);
+    fechaElegida = new Date(y, m-1, d); // hora local, evita el corrimiento de un día por UTC
+  }
+  cerrarFechaReporteModal();
+  generarPDFPrioridad(fechaElegida);
 });
 
 // ── Generar PDF — Propuesta de pagos (reporte de prioridad) ──
-function generarPDFPrioridad() {
+function generarPDFPrioridad(fechaReporte) {
+  fechaReporte = fechaReporte instanceof Date && !isNaN(fechaReporte) ? fechaReporte : today();
   const regs = todosReg.filter(r => prioIds.has(String(r.id)));
   if (!regs.length) { toast('No hay facturas en prioridad','err'); return; }
 
@@ -3298,7 +3339,7 @@ function generarPDFPrioridad() {
         <div class="pp-header-right">
           <div class="pp-hr-label">Total seleccionado</div>
           <div class="pp-hr-monto">${fmt(acumulado)}</div>
-          <div class="pp-hr-fecha">${today().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'})}</div>
+          <div class="pp-hr-fecha">${fechaReporte.toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'})}</div>
         </div>
       </div>
 
