@@ -1473,7 +1473,9 @@ function regsBase() {
     if (empresaActual !== 'todas' && r.empresa !== empresaActual) return false;
     if (anyoActual   !== 'todos' && getAnyo(r) !== parseInt(anyoActual)) return false;
     if (mesActual    !== 'todos') {
-      const d = r.fecha_factura || r.fecha_vencimiento || r.created_at;
+      // Si estamos viendo "Pagadas", el filtro de mes debe usar la fecha de pago,
+      // no la fecha de factura. Para el resto de los filtros se conserva el criterio anterior.
+      const d = (filtroActual === 'pagada' ? r.fecha_pago : null) || r.fecha_factura || r.fecha_vencimiento || r.created_at;
       if (!d) return false;
       if (new Date(d+'T12:00:00').getMonth()+1 !== parseInt(mesActual)) return false;
     }
