@@ -3335,11 +3335,11 @@ function generarPDFPrioridad(fechaReporte) {
         </div>
         <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;white-space:nowrap;pointer-events:none">
           <div style="font-family:'EB Garamond',serif;font-size:34px;font-weight:400;color:var(--crema);letter-spacing:.01em">${EMPRESAS[empKey]?.nombre || empKey}</div>
+          <div style="font-size:10px;color:rgba(245,240,232,.45);margin-top:6px">${fechaReporte.toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'})}</div>
         </div>
         <div class="pp-header-right">
           <div class="pp-hr-label">Total seleccionado</div>
           <div class="pp-hr-monto">${fmt(acumulado)}</div>
-          <div class="pp-hr-fecha">${fechaReporte.toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'})}</div>
         </div>
       </div>
 
