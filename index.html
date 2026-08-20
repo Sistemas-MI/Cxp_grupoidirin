@@ -2854,16 +2854,25 @@ function filtroTagCompleto() {
 $('btnExportFacturasCSV').addEventListener('click',()=>{
   const regs = sortRegs(regsFiltrados());
   if (!regs.length) { toast('No hay facturas con este filtro','err'); return; }
-  // Mismas columnas y mismo orden que se ven en la tabla "Registros CxP" en pantalla.
-  const cols=['folio','proveedor','no_factura','fecha_factura','total_mn','saldo','usd','total_usd','servicio','fecha_vencimiento','fecha_pago','status','solicita','empresa'];
-  const heads=['Folio','Proveedor','Factura','F. Factura','Importe','Saldo','Moneda','Monto USD','Servicio','Vence','F. Pago','Status','Solicita','Empresa'];
+  // Exporta TODOS los campos de la factura (no solo los que se ven en la tabla en pantalla),
+  // respetando el filtro/búsqueda activos en ese momento (Todas/Pendientes/Vencidas/Pagadas/Prioridad).
+  const cols=['folio','empresa','proveedor','no_factura','fecha_factura','area_evento','solicita','servicio','usd','tipo_cambio','subtotal','iva','ret_iva','ret_isr','total_mn','total_usd','abonado','saldo','fecha_vencimiento','dias','fecha_pago','cta_pago','status','obs'];
+  const heads=['Folio','Empresa','Proveedor','Factura','F. Factura','Área/Evento','Solicita','Servicio','Moneda','Tipo de Cambio','Subtotal','IVA','Ret. IVA','Ret. ISR','Importe','Monto USD','Abonado','Saldo','Vence','Días','F. Pago','Cuenta Pago','Status','Observaciones'];
   const getV=(r,c)=>{
-    if (c==='solicita')  return r.solicita||r.periodo_gasto||'';
-    if (c==='empresa')   return EMPRESAS[r.empresa]?.short||r.empresa||'';
-    if (c==='saldo')     return saldoDeReg(r).toFixed(2);
-    if (c==='total_mn')  return (parseFloat(r.total_mn)||0).toFixed(2);
-    if (c==='total_usd') return (r.usd==='USD' && r.total_usd!=null) ? parseFloat(r.total_usd).toFixed(2) : '';
-    if (c==='status')    return r.status==='pagada'?'Pagada':(r.status!=='pagada'&&diasVenc(r.fecha_vencimiento)>0)?'Vencida':'Pendiente';
+    if (c==='solicita')    return r.solicita||r.periodo_gasto||'';
+    if (c==='empresa')     return EMPRESAS[r.empresa]?.short||r.empresa||'';
+    if (c==='saldo')       return saldoDeReg(r).toFixed(2);
+    if (c==='abonado')     return abonadoDeReg(r).toFixed(2);
+    if (c==='total_mn')    return (parseFloat(r.total_mn)||0).toFixed(2);
+    if (c==='total_usd')   return (r.usd==='USD' && r.total_usd!=null) ? parseFloat(r.total_usd).toFixed(2) : '';
+    if (c==='tipo_cambio') return (r.tipo_cambio!=null && r.tipo_cambio!=='') ? parseFloat(r.tipo_cambio).toFixed(4) : '';
+    if (['subtotal','iva','ret_iva','ret_isr'].includes(c)) return (r[c]!=null && r[c]!=='') ? parseFloat(r[c]).toFixed(2) : '';
+    if (c==='dias') {
+      if (!r.fecha_vencimiento) return '';
+      const diff = Math.floor((new Date(r.fecha_vencimiento+'T12:00:00') - today()) / 86400000);
+      return diff>=0 ? `${diff} días` : `${diff} días vencidos`;
+    }
+    if (c==='status')      return r.status==='pagada'?'Pagada':(r.status!=='pagada'&&diasVenc(r.fecha_vencimiento)>0)?'Vencida':'Pendiente';
     return r[c]??'';
   };
   const filas = regs.map(r=>cols.map(c=>'"'+String(getV(r,c)).replace(/"/g,'""')+'"').join(','));
