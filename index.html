@@ -302,6 +302,27 @@ tr.vencido td.td-prov{color:var(--rojo)}
 .form-group.invalid .err-tip{display:block}
 .form-group.invalid input,.form-group.invalid select{border-color:var(--rojo)!important;background:var(--rojo-xs)}
 
+/* ── CALCULADORA DE MONTOS ── */
+.input-calc-wrap{position:relative}
+.input-calc-wrap input{padding-right:32px!important;cursor:pointer;background:#fff}
+.input-calc-wrap input:focus{background:#fff}
+.calc-hint{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--suave);opacity:.6;pointer-events:none;transition:.15s}
+.input-calc-wrap:hover .calc-hint{opacity:1;color:var(--dorado)}
+.calc-pop{position:absolute;z-index:250;top:calc(100% + 6px);right:0;width:212px;background:var(--crema);border:1px solid var(--linea);border-radius:var(--r);box-shadow:var(--sh-lg);padding:9px;display:none}
+.calc-pop.open{display:block}
+.calc-display{background:#fff;border:1px solid var(--linea);border-radius:3px;padding:7px 9px;margin-bottom:7px;text-align:right}
+.calc-display .prev{display:block;font-size:9px;color:var(--suave);min-height:11px;line-height:11px;font-family:'Inter',sans-serif;letter-spacing:.02em;overflow-x:auto;white-space:nowrap}
+.calc-display .main{display:block;font-size:17px;color:var(--texto);font-family:'Inter',sans-serif;font-weight:500;overflow-x:auto;white-space:nowrap;min-height:20px}
+.calc-display.error .main{color:var(--rojo)}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.calc-grid button{border:1px solid var(--linea);background:#fff;border-radius:3px;padding:8px 0;font-size:12.5px;color:var(--texto);cursor:pointer;transition:.12s;font-family:'Inter',sans-serif}
+.calc-grid button:hover{background:var(--dorado-xs);border-color:var(--dorado-sm)}
+.calc-grid button:active{background:var(--dorado-sm)}
+.calc-grid button.op{background:var(--cafe-xs);color:var(--cafe);font-weight:600}
+.calc-grid button.eq{background:var(--cafe);color:var(--crema);grid-column:span 2;font-weight:600}
+.calc-grid button.eq:hover{background:var(--cafe-l)}
+.calc-grid button.clr{color:var(--rojo)}
+
 /* ── AUTOCOMPLETADO DE PROVEEDOR ── */
 .autocomplete-wrap{position:relative}
 .autocomplete-list{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid var(--linea);border-radius:var(--r);box-shadow:var(--sh-lg);max-height:220px;overflow-y:auto;z-index:50}
@@ -948,7 +969,10 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
       <div class="form-row triple">
         <div class="form-group">
           <label>Subtotal</label>
-          <input type="number" id="fSubtotal" placeholder="0.00" step="0.01" min="0">
+          <div class="input-calc-wrap" id="wrapSubtotal">
+            <input type="number" id="fSubtotal" placeholder="0.00" step="0.01" min="0" readonly>
+            <span class="calc-hint">🧮</span>
+          </div>
         </div>
         <div class="form-group">
           <label>IVA</label>
@@ -1055,6 +1079,35 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
 </div>
 
 <!-- MODAL PROVEEDOR -->
+<!-- ── CALCULADORA FLOTANTE (compartida por los campos de Montos) ── -->
+<div class="calc-pop" id="calcPop">
+  <div class="calc-display" id="calcDisplay">
+    <span class="prev" id="calcPrev">&nbsp;</span>
+    <span class="main" id="calcMain">0</span>
+  </div>
+  <div class="calc-grid">
+    <button type="button" class="clr" data-k="C">C</button>
+    <button type="button" data-k="BS">⌫</button>
+    <button type="button" data-k="%">%</button>
+    <button type="button" class="op" data-k="/">÷</button>
+    <button type="button" data-k="7">7</button>
+    <button type="button" data-k="8">8</button>
+    <button type="button" data-k="9">9</button>
+    <button type="button" class="op" data-k="*">×</button>
+    <button type="button" data-k="4">4</button>
+    <button type="button" data-k="5">5</button>
+    <button type="button" data-k="6">6</button>
+    <button type="button" class="op" data-k="-">−</button>
+    <button type="button" data-k="1">1</button>
+    <button type="button" data-k="2">2</button>
+    <button type="button" data-k="3">3</button>
+    <button type="button" class="op" data-k="+">+</button>
+    <button type="button" data-k="0">0</button>
+    <button type="button" data-k=".">.</button>
+    <button type="button" class="eq" data-k="=">=</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalProvOverlay">
   <div class="modal">
     <div class="modal-head">
@@ -2385,6 +2438,117 @@ $('fIva').addEventListener('input', recalcularTotal);
 $('fRetIva').addEventListener('input', recalcularTotal);
 $('fRetIsr').addEventListener('input', recalcularTotal);
 $('fTotal').addEventListener('input', actualizarResumenAbonos);
+
+// ═══════════════════════════════════════════════════════
+//  CALCULADORA FLOTANTE — para campos de Montos
+//  Uso: attachCalc('fSubtotal','wrapSubtotal'); (repetible en cualquier input)
+// ═══════════════════════════════════════════════════════
+(function(){
+  const pop     = $('calcPop');
+  const elMain  = $('calcMain');
+  const elPrev  = $('calcPrev');
+  const display = $('calcDisplay');
+  let expr = '';
+  let activeInput = null;
+
+  const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+
+  // Solo permite dígitos, punto y los operadores + - * / % ( ) — nunca letras ni otros símbolos.
+  function evaluar(s){
+    const limpio = s.replace(/[^0-9+\-*/.%() ]/g, '');
+    if (!limpio.trim()) return null;
+    try{
+      const conPorcentaje = limpio.replace(/(\d+(\.\d+)?)%/g, '($1/100)');
+      // eslint-disable-next-line no-new-func
+      const val = Function('"use strict";return (' + conPorcentaje + ')')();
+      return (typeof val === 'number' && isFinite(val)) ? val : null;
+    }catch(e){ return null; }
+  }
+
+  function render(){
+    elMain.textContent = expr || '0';
+    const esNumeroPlano = /^-?\d*\.?\d*$/.test(expr.trim());
+    if (expr && !esNumeroPlano){
+      const val = evaluar(expr);
+      if (val !== null){ elPrev.textContent = '= ' + round2(val).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}); display.classList.remove('error'); }
+      else { elPrev.textContent = 'Expresión incompleta'; display.classList.add('error'); }
+    } else {
+      elPrev.textContent = '\u00A0';
+      display.classList.remove('error');
+    }
+  }
+
+  function abrir(input, wrap){
+    activeInput = input;
+    const actual = parseFloat(input.value);
+    expr = (actual && actual !== 0) ? String(actual) : '';
+    render();
+    wrap.appendChild(pop);           // reposiciona el popover bajo el campo que lo invocó
+    pop.classList.add('open');
+  }
+
+  function cerrar(aplicar){
+    if (aplicar && activeInput){
+      const val = evaluar(expr);
+      if (val !== null){
+        activeInput.value = round2(val).toFixed(2);
+        activeInput.dispatchEvent(new Event('input', {bubbles:true}));
+      }
+    }
+    pop.classList.remove('open');
+    activeInput = null;
+    expr = '';
+  }
+
+  function attachCalc(inputId, wrapId){
+    const input = $(inputId);
+    const wrap  = $(wrapId);
+    input.addEventListener('click', e=>{
+      e.stopPropagation();
+      if (pop.classList.contains('open') && activeInput === input) cerrar(false);
+      else abrir(input, wrap);
+    });
+  }
+
+  function presionar(k){
+    if (k === 'C'){ expr = ''; }
+    else if (k === 'BS'){ expr = expr.slice(0, -1); }
+    else if (k === '='){ cerrar(true); return; }
+    else { expr += k; }
+    render();
+  }
+
+  pop.addEventListener('click', e=>{
+    const btn = e.target.closest('button[data-k]');
+    if (!btn) return;
+    e.stopPropagation();
+    presionar(btn.dataset.k);
+  });
+
+  // Escribir con el teclado físico mientras el popover está abierto
+  document.addEventListener('keydown', e=>{
+    if (!pop.classList.contains('open')) return;
+    if (/^[0-9]$/.test(e.key) || '+-*/.%()'.includes(e.key)){
+      e.preventDefault(); presionar(e.key);
+    } else if (e.key === 'Enter' || e.key === '='){
+      e.preventDefault(); presionar('=');
+    } else if (e.key === 'Backspace'){
+      e.preventDefault(); presionar('BS');
+    } else if (e.key === 'Escape'){
+      e.preventDefault(); cerrar(false);
+    }
+  });
+
+  // Cerrar al hacer clic fuera del popover
+  document.addEventListener('click', e=>{
+    if (!pop.classList.contains('open')) return;
+    if (pop.contains(e.target)) return;
+    cerrar(false);
+  });
+
+  attachCalc('fSubtotal', 'wrapSubtotal');
+  window.attachCalc = attachCalc; // por si luego quieres agregarla a IVA, Ret. IVA, Ret. ISR, etc.
+})();
 
 // ═══════════════════════════════════════════════════════
 //  ABONOS — registro, cálculo de saldo y bitácora
