@@ -304,10 +304,9 @@ tr.vencido td.td-prov{color:var(--rojo)}
 
 /* ── CALCULADORA DE MONTOS ── */
 .input-calc-wrap{position:relative}
-.input-calc-wrap input{padding-right:32px!important;cursor:pointer;background:#fff}
-.input-calc-wrap input:focus{background:#fff}
-.calc-hint{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--suave);opacity:.6;pointer-events:none;transition:.15s}
-.input-calc-wrap:hover .calc-hint{opacity:1;color:var(--dorado)}
+.input-calc-wrap input{padding-right:32px!important;background:#fff}
+.calc-hint{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--suave);opacity:.65;transition:.15s;background:none;border:none;border-radius:3px;cursor:pointer;padding:0}
+.calc-hint:hover{opacity:1;color:var(--cafe);background:var(--dorado-xs)}
 .calc-pop{position:absolute;z-index:250;top:calc(100% + 6px);right:0;width:212px;background:var(--crema);border:1px solid var(--linea);border-radius:var(--r);box-shadow:var(--sh-lg);padding:9px;display:none}
 .calc-pop.open{display:block}
 .calc-display{background:#fff;border:1px solid var(--linea);border-radius:3px;padding:7px 9px;margin-bottom:7px;text-align:right}
@@ -970,8 +969,8 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
         <div class="form-group">
           <label>Subtotal</label>
           <div class="input-calc-wrap" id="wrapSubtotal">
-            <input type="number" id="fSubtotal" placeholder="0.00" step="0.01" min="0" readonly>
-            <span class="calc-hint">🧮</span>
+            <input type="number" id="fSubtotal" placeholder="0.00" step="0.01" min="0">
+            <button type="button" class="calc-hint" id="btnCalcSubtotal" tabindex="-1" title="Abrir calculadora">🧮</button>
           </div>
         </div>
         <div class="form-group">
@@ -2441,7 +2440,7 @@ $('fTotal').addEventListener('input', actualizarResumenAbonos);
 
 // ═══════════════════════════════════════════════════════
 //  CALCULADORA FLOTANTE — para campos de Montos
-//  Uso: attachCalc('fSubtotal','wrapSubtotal'); (repetible en cualquier input)
+//  Uso: attachCalc('fSubtotal','wrapSubtotal','btnCalcSubtotal'); (repetible en cualquier input)
 // ═══════════════════════════════════════════════════════
 (function(){
   const pop     = $('calcPop');
@@ -2500,14 +2499,17 @@ $('fTotal').addEventListener('input', actualizarResumenAbonos);
     expr = '';
   }
 
-  function attachCalc(inputId, wrapId){
+  function attachCalc(inputId, wrapId, btnId){
     const input = $(inputId);
     const wrap  = $(wrapId);
-    input.addEventListener('click', e=>{
+    const btn   = $(btnId);
+    btn.addEventListener('click', e=>{
+      e.preventDefault();
       e.stopPropagation();
       if (pop.classList.contains('open') && activeInput === input) cerrar(false);
       else abrir(input, wrap);
     });
+    // El campo de texto queda libre: escritura directa normal, sin abrir la calculadora.
   }
 
   function presionar(k){
@@ -2546,7 +2548,7 @@ $('fTotal').addEventListener('input', actualizarResumenAbonos);
     cerrar(false);
   });
 
-  attachCalc('fSubtotal', 'wrapSubtotal');
+  attachCalc('fSubtotal', 'wrapSubtotal', 'btnCalcSubtotal');
   window.attachCalc = attachCalc; // por si luego quieres agregarla a IVA, Ret. IVA, Ret. ISR, etc.
 })();
 
