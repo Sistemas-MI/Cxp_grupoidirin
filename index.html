@@ -1675,7 +1675,6 @@ function renderResumen() {
     const acumE= er.reduce((s,r)=>s+(parseFloat(r.total_mn)||0),0);
     const pagE = er.reduce((s,r)=>s + (r.status==='pagada' ? (parseFloat(r.total_mn)||0) : abonadoDeReg(r)), 0);
     const pendE= er.filter(r=>r.status!=='pagada').reduce((s,r)=>s+saldoDeReg(r),0);
-    const vencE= er.filter(r=>r.status!=='pagada'&&diasVenc(r.fecha_vencimiento)>0).reduce((s,r)=>s+saldoDeReg(r),0);
     const pct  = acumE>0?Math.round((pagE/acumE)*100):0;
     return `<div class="emp-row" onclick="filtrarEmpresa('${key}')">
       <div>
@@ -1686,8 +1685,8 @@ function renderResumen() {
       <div class="er-chip"><div class="er-lbl">Acumulado</div><b>${fmt(acumE)}</b></div>
       <div class="er-chip"><div class="er-lbl">Pagado</div><b style="color:var(--verde)">${fmt(pagE)}</b></div>
       <div class="er-chip">
-        <div class="er-lbl">${vencE>0?'⚠ Vencido':'Pendiente'}</div>
-        <b style="color:${vencE>0?'var(--rojo)':'#8a6a18'}">${vencE>0?fmt(vencE):fmt(pendE)}</b>
+        <div class="er-lbl">Pendiente</div>
+        <b style="color:#8a6a18">${fmt(pendE)}</b>
       </div>
     </div>`;
   }).join('');
