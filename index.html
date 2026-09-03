@@ -1026,6 +1026,7 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
         <input type="text" id="fAbonoNota" placeholder="Nota (opcional)">
         <button type="button" class="btn-add-abono" id="btnAgregarAbono">+ Registrar abono</button>
       </div>
+      <span class="abonos-hint" id="fAbonoUsdPreview" style="display:none"></span>
       <p class="abonos-hint" id="abonosHint">Guarda la factura primero para poder registrar abonos.</p>
       <div class="abonos-lista" id="abonosLista"></div>
 
@@ -2411,8 +2412,21 @@ function actualizarVisibilidadTipoCambio() {
   const esUsd = $('fMoneda').value === 'USD';
   $('fg-tipocambio').style.display = esUsd ? '' : 'none';
   if (!esUsd) { $('fTipoCambio').value = ''; $('fg-tipocambio').classList.remove('invalid'); }
+  $('fAbonoMonto').placeholder = esUsd ? 'Importe a abonar (en USD)' : 'Importe a abonar';
   actualizarPreviewTipoCambio();
+  actualizarPreviewAbonoUsd();
   actualizarResumenAbonos();
+}
+function actualizarPreviewAbonoUsd() {
+  const prev = $('fAbonoUsdPreview');
+  const esUsd = $('fMoneda').value === 'USD';
+  if (!esUsd) { prev.style.display = 'none'; prev.textContent = ''; return; }
+  const montoUsd = parseFloat($('fAbonoMonto').value) || 0;
+  const tc       = parseFloat($('fTipoCambio').value) || 0;
+  prev.style.display = '';
+  prev.textContent = (montoUsd>0 && tc>0)
+    ? `US$${montoUsd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} × ${tc} = ${fmt(montoUsd*tc)} MXN se registrarán`
+    : 'Escribe el importe en dólares — se convertirá a pesos con el tipo de cambio de esta factura';
 }
 function actualizarPreviewTipoCambio() {
   const prev = $('fTipoCambioPreview');
@@ -2426,7 +2440,8 @@ function actualizarPreviewTipoCambio() {
 }
 $('fMoneda').addEventListener('change', actualizarVisibilidadTipoCambio);
 $('fStatus').addEventListener('change', actualizarResumenAbonos);
-$('fTipoCambio').addEventListener('input', ()=>{ $('fg-tipocambio').classList.remove('invalid'); actualizarPreviewTipoCambio(); actualizarResumenAbonos(); });
+$('fTipoCambio').addEventListener('input', ()=>{ $('fg-tipocambio').classList.remove('invalid'); actualizarPreviewTipoCambio(); actualizarPreviewAbonoUsd(); actualizarResumenAbonos(); });
+$('fAbonoMonto').addEventListener('input', actualizarPreviewAbonoUsd);
 $('fSubtotal').addEventListener('input',()=>{
   const s=parseFloat($('fSubtotal').value)||0;
   $('fIva').value=(s*.16).toFixed(2);
@@ -2584,7 +2599,7 @@ function renderAbonos() {
   $('abonosLista').innerHTML = ordenados.map(a => `
     <div class="abono-item" data-abono-id="${a.id}">
       <span class="abono-fecha">${fmtDate(a.fecha)}</span>
-      <span class="abono-monto">${fmt(a.monto)}</span>
+      <span class="abono-monto">${fmt(a.monto)}${a.monto_usd!=null?` <span style="color:var(--suave);font-weight:400;font-size:9px">(US$${parseFloat(a.monto_usd).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} × ${a.tc})</span>`:''}</span>
       <span class="abono-nota">${a.nota ? a.nota.replace(/</g,'&lt;') : '—'}</span>
       <button type="button" class="abono-del" title="Eliminar abono" data-id="${a.id}">✕</button>
     </div>`).join('');
@@ -2602,12 +2617,25 @@ function eliminarAbono(id) {
 }
 
 $('btnAgregarAbono').addEventListener('click', () => {
-  const monto = parseFloat($('fAbonoMonto').value);
-  if (!monto || monto <= 0) { toast('Ingresa un importe de abono válido', 'err'); return; }
+  const montoIngresado = parseFloat($('fAbonoMonto').value);
+  if (!montoIngresado || montoIngresado <= 0) { toast('Ingresa un importe de abono válido', 'err'); return; }
 
-  const total      = parseFloat($('fTotal').value) || 0;
-  const yaAbonado  = totalAbonado(abonosActuales);
-  const saldoPrevio= total - yaAbonado;
+  // Si la factura es en USD, el importe se captura en dólares (igual que Subtotal/Total)
+  // y se convierte a pesos con el tipo de cambio, porque el sistema lleva su contabilidad
+  // interna (saldos, KPIs, "Pagado"/"Pendiente" por empresa) siempre en MXN.
+  const esUsd = $('fMoneda').value === 'USD';
+  const tc    = esUsd ? (parseFloat($('fTipoCambio').value) || 0) : 0;
+  if (esUsd && tc <= 0) {
+    toast('Define el tipo de cambio de la factura antes de registrar el abono', 'err');
+    $('fg-tipocambio').classList.add('invalid');
+    return;
+  }
+  const monto = esUsd ? montoIngresado * tc : montoIngresado;
+
+  const totalCapturado = parseFloat($('fTotal').value) || 0;
+  const total       = esUsd ? totalCapturado * tc : totalCapturado; // total ya en MXN, igual que actualizarResumenAbonos()
+  const yaAbonado   = totalAbonado(abonosActuales);
+  const saldoPrevio = total - yaAbonado;
   if (total>0 && monto > saldoPrevio + 0.01) {
     toast(`El abono excede el saldo pendiente (${fmt(saldoPrevio)})`, 'err');
     return;
@@ -2615,7 +2643,9 @@ $('btnAgregarAbono').addEventListener('click', () => {
 
   abonosActuales.push({
     id:    'ab_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
-    monto: monto,
+    monto: monto,                                  // siempre en MXN, sin importar la moneda de la factura
+    monto_usd: esUsd ? montoIngresado : null,       // importe original tal como se capturó, para mostrarlo en el historial
+    tc:        esUsd ? tc : null,
     fecha: $('fAbonoFecha').value || new Date().toISOString().split('T')[0],
     nota:  $('fAbonoNota').value.trim() || null,
   });
@@ -2623,6 +2653,7 @@ $('btnAgregarAbono').addEventListener('click', () => {
   $('fAbonoMonto').value = '';
   $('fAbonoFecha').value = '';
   $('fAbonoNota').value  = '';
+  actualizarPreviewAbonoUsd();
   renderAbonos();
 
   // Si el saldo llega a 0, ofrecer marcar como pagada automáticamente
