@@ -55,8 +55,8 @@ header h1 em{font-style:italic;color:var(--dorado)}
 .filtros-bar .divv{width:1px;height:20px;background:var(--linea)}
 
 /* ── Filtro de proveedor (solo visible en la pestaña Antigüedad, junto a Mes) ── */
-.antig-filtro-clear{font-size:10px;color:var(--cafe);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
-.antig-filtro-clear:hover{color:var(--rojo)}
+.antig-filtro-clear{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.04em;color:var(--cafe);cursor:pointer;white-space:nowrap;padding:7px 12px;border:1px solid rgba(92,46,26,.28);border-radius:3px;background:rgba(92,46,26,.06);transition:.15s;line-height:1}
+.antig-filtro-clear:hover{background:var(--cafe);color:var(--crema);border-color:var(--cafe)}
 
 /* ── CONTENIDO ── */
 .contenido{padding:22px 24px 0;max-width:1680px;margin:0 auto}
@@ -658,7 +658,7 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
         <option value="todos">Todos los proveedores</option>
       </select>
     </div>
-    <span class="antig-filtro-clear" id="antigFiltroClear" style="display:none">Quitar filtro ✕</span>
+    <span class="antig-filtro-clear" id="antigFiltroClear" style="display:none">✕ Quitar filtros</span>
   </div>
 </div>
 
@@ -1950,9 +1950,13 @@ $('proveedorAntigSelect').addEventListener('change', e=>{
   renderAntiguedad();
 });
 $('antigFiltroClear').addEventListener('click', ()=>{
-  proveedorAntig = 'todos';
-  $('proveedorAntigSelect').value = 'todos';
-  renderAntiguedad();
+  empresaActual = 'todas';   $('empresaSelect').value = 'todas';
+  anyoActual    = 'todos';   $('anyoSelect').value    = 'todos';
+  mesActual     = 'todos';   $('mesSelect').value     = 'todos';
+  proveedorAntig= 'todos';   $('proveedorAntigSelect').value = 'todos';
+  filtroAntig   = null;
+  pagActual     = 1;
+  renderAll();
 });
 document.querySelectorAll('#tablaVencidas .th-sort-antig').forEach(th=>{
   th.addEventListener('click', ()=>{
@@ -2078,7 +2082,8 @@ function poblarProveedoresAntig(vencidasSinFiltroProv) {
     provs.map(p=>`<option value="${p.replace(/"/g,'&quot;')}">${p.replace(/</g,'&lt;')}</option>`).join('');
   if (provs.includes(cur)) sel.value = cur;
   else { sel.value = 'todos'; proveedorAntig = 'todos'; }
-  $('antigFiltroClear').style.display = proveedorAntig!=='todos' ? '' : 'none';
+  const hayFiltroActivo = empresaActual!=='todas' || anyoActual!=='todos' || mesActual!=='todos' || proveedorAntig!=='todos';
+  $('antigFiltroClear').style.display = hayFiltroActivo ? '' : 'none';
 }
 
 function renderAntiguedad() {
