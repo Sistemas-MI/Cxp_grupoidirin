@@ -54,9 +54,7 @@ header h1 em{font-style:italic;color:var(--dorado)}
 .sel-wrap::after{content:'▾';position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--dorado);font-size:9px}
 .filtros-bar .divv{width:1px;height:20px;background:var(--linea)}
 
-/* ── Filtro de proveedor local a la pestaña Antigüedad ── */
-.antig-filtro-bar{display:flex;align-items:center;gap:10px;margin:0 0 12px;flex-wrap:wrap}
-.antig-filtro-bar label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--suave);white-space:nowrap}
+/* ── Filtro de proveedor (solo visible en la pestaña Antigüedad, junto a Mes) ── */
 .antig-filtro-clear{font-size:10px;color:var(--cafe);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .antig-filtro-clear:hover{color:var(--rojo)}
 
@@ -652,6 +650,16 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
       <option value="12">Diciembre</option>
     </select>
   </div>
+  <div class="divv" id="provAntigDiv" style="display:none"></div>
+  <div id="provAntigWrap" style="display:none;align-items:center;gap:10px">
+    <label>Proveedor</label>
+    <div class="sel-wrap">
+      <select id="proveedorAntigSelect" style="min-width:160px">
+        <option value="todos">Todos los proveedores</option>
+      </select>
+    </div>
+    <span class="antig-filtro-clear" id="antigFiltroClear" style="display:none">Quitar filtro ✕</span>
+  </div>
 </div>
 
 <main class="contenido">
@@ -855,15 +863,6 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
   <!-- ══ ANTIGÜEDAD ══ -->
   <section id="tab-antiguedad" style="display:none">
     <p class="sec-label">Cartera vencida por antigüedad</p>
-    <div class="antig-filtro-bar">
-      <label>Proveedor</label>
-      <div class="sel-wrap">
-        <select id="proveedorAntigSelect">
-          <option value="todos">Todos los proveedores</option>
-        </select>
-      </div>
-      <span class="antig-filtro-clear" id="antigFiltroClear" style="display:none">Quitar filtro ✕</span>
-    </div>
     <div class="antig-grid">
       <div class="antig-card corriente" id="ac-7"  data-rango="7"  style="cursor:pointer"><div class="an-rango">1–7 días</div><div class="an-monto" id="a7">—</div><div class="an-count" id="a7c">—</div></div>
       <div class="antig-card corriente" id="ac-15" data-rango="15" style="cursor:pointer"><div class="an-rango">8–15 días</div><div class="an-monto" id="a15">—</div><div class="an-count" id="a15c">—</div></div>
@@ -2732,6 +2731,8 @@ function abrirEdicion(id) {
 function cambiarTab(tab) {
   document.querySelectorAll('.nav-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
   document.querySelectorAll('section[id^="tab-"]').forEach(s=>{s.style.display=s.id==='tab-'+tab?'':'none';});
+  $('provAntigWrap').style.display = tab==='antiguedad' ? 'flex' : 'none';
+  $('provAntigDiv').style.display  = tab==='antiguedad' ? '' : 'none';
   if (tab==='resumen')      renderResumen();
   else if (tab==='facturas')renderFacturas();
   else if (tab==='proveedores') renderProveedores();
