@@ -54,6 +54,12 @@ header h1 em{font-style:italic;color:var(--dorado)}
 .sel-wrap::after{content:'▾';position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--dorado);font-size:9px}
 .filtros-bar .divv{width:1px;height:20px;background:var(--linea)}
 
+/* ── Filtro de proveedor local a la pestaña Antigüedad ── */
+.antig-filtro-bar{display:flex;align-items:center;gap:10px;margin:0 0 12px;flex-wrap:wrap}
+.antig-filtro-bar label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--suave);white-space:nowrap}
+.antig-filtro-clear{font-size:10px;color:var(--cafe);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.antig-filtro-clear:hover{color:var(--rojo)}
+
 /* ── CONTENIDO ── */
 .contenido{padding:22px 24px 0;max-width:1680px;margin:0 auto}
 
@@ -849,6 +855,15 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
   <!-- ══ ANTIGÜEDAD ══ -->
   <section id="tab-antiguedad" style="display:none">
     <p class="sec-label">Cartera vencida por antigüedad</p>
+    <div class="antig-filtro-bar">
+      <label>Proveedor</label>
+      <div class="sel-wrap">
+        <select id="proveedorAntigSelect">
+          <option value="todos">Todos los proveedores</option>
+        </select>
+      </div>
+      <span class="antig-filtro-clear" id="antigFiltroClear" style="display:none">Quitar filtro ✕</span>
+    </div>
     <div class="antig-grid">
       <div class="antig-card corriente" id="ac-7"  data-rango="7"  style="cursor:pointer"><div class="an-rango">1–7 días</div><div class="an-monto" id="a7">—</div><div class="an-count" id="a7c">—</div></div>
       <div class="antig-card corriente" id="ac-15" data-rango="15" style="cursor:pointer"><div class="an-rango">8–15 días</div><div class="an-monto" id="a15">—</div><div class="an-count" id="a15c">—</div></div>
@@ -1268,6 +1283,7 @@ const POR_PAG_PROV = 15;
 
 // Antigüedad — filtro de rango activo (null = todas las vencidas)
 let filtroAntig   = null;  // null | 7 | 15 | 30 | 60 | 120
+let proveedorAntig = 'todos'; // 'todos' | nombre exacto del proveedor — filtro local de la pestaña Antigüedad
 let sortColAntig  = 'dias';
 let sortDirAntig  = 'desc';
 
@@ -1930,6 +1946,15 @@ document.querySelectorAll('.antig-card').forEach(card=>{
     renderAntiguedad();
   });
 });
+$('proveedorAntigSelect').addEventListener('change', e=>{
+  proveedorAntig = e.target.value;
+  renderAntiguedad();
+});
+$('antigFiltroClear').addEventListener('click', ()=>{
+  proveedorAntig = 'todos';
+  $('proveedorAntigSelect').value = 'todos';
+  renderAntiguedad();
+});
 document.querySelectorAll('#tablaVencidas .th-sort-antig').forEach(th=>{
   th.addEventListener('click', ()=>{
     const col = th.dataset.col;
@@ -2046,8 +2071,26 @@ $('btnEliminarProveedor').addEventListener('click', ()=>{
 // ═══════════════════════════════════════════════════════
 //  ANTIGÜEDAD
 // ═══════════════════════════════════════════════════════
+function poblarProveedoresAntig(vencidasSinFiltroProv) {
+  const sel = $('proveedorAntigSelect');
+  const provs = [...new Set(vencidasSinFiltroProv.map(r=>r.proveedor).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  const cur = sel.value;
+  sel.innerHTML = '<option value="todos">Todos los proveedores</option>' +
+    provs.map(p=>`<option value="${p.replace(/"/g,'&quot;')}">${p.replace(/</g,'&lt;')}</option>`).join('');
+  if (provs.includes(cur)) sel.value = cur;
+  else { sel.value = 'todos'; proveedorAntig = 'todos'; }
+  $('antigFiltroClear').style.display = proveedorAntig!=='todos' ? '' : 'none';
+}
+
 function renderAntiguedad() {
-  const regs = regsBase().filter(r=>r.status!=='pagada');
+  const regsTodos = regsBase().filter(r=>r.status!=='pagada');
+
+  // Universo de proveedores para el <select> = solo los que sí tienen facturas vencidas
+  // ahora mismo (respetando Empresa/Año/Mes), sin que el propio filtro de proveedor lo recorte.
+  const vencidasSinFiltroProv = regsTodos.filter(r=>diasVenc(r.fecha_vencimiento)>0);
+  poblarProveedoresAntig(vencidasSinFiltroProv);
+
+  const regs = proveedorAntig==='todos' ? regsTodos : regsTodos.filter(r=>r.proveedor===proveedorAntig);
   const r7=[], r15=[], r30=[], r60=[], r120=[], vencidas=[];
   regs.forEach(r=>{
     const d=diasVenc(r.fecha_vencimiento);
@@ -2097,9 +2140,10 @@ function renderAntiguedad() {
 
   // Actualizar label de la tabla
   const rangoLabel = {7:'1–7 días',15:'8–15 días',30:'16–30 días',60:'31–60 días',120:'60–120 días'};
+  const provTxt = proveedorAntig!=='todos' ? ` — ${proveedorAntig}` : '';
   $('vencidasLabel').textContent = filtroAntig
-    ? `Facturas vencidas — ${rangoLabel[filtroAntig]} (${lista.length})`
-    : `Facturas vencidas — detalle (${vencidas.length})`;
+    ? `Facturas vencidas — ${rangoLabel[filtroAntig]}${provTxt} (${lista.length})`
+    : `Facturas vencidas — detalle${provTxt} (${vencidas.length})`;
 
   $('vencidosTbody').innerHTML=lista.length?lista.map(r=>`
     <tr class="vencido">
@@ -2110,7 +2154,7 @@ function renderAntiguedad() {
       <td class="r"><span class="dias-tag">${r._diasVenc}d</span></td>
       <td style="font-size:9px;color:var(--suave)">${EMPRESAS[r.empresa]?.short||'—'}</td>
     </tr>`).join(''):
-    `<tr><td colspan="6"><div class="empty-state"><div class="es-ico">✅</div><p>Sin facturas vencidas${filtroAntig?' en este rango':''}.${filtroAntig?' <span style="font-size:10px;color:var(--cafe);cursor:pointer" onclick="filtroAntig=null;renderAntiguedad()">Ver todas</span>':''}</p></div></td></tr>`;
+    `<tr><td colspan="6"><div class="empty-state"><div class="es-ico">✅</div><p>Sin facturas vencidas${filtroAntig?' en este rango':''}${provTxt}.${(filtroAntig||proveedorAntig!=='todos')?' <span style="font-size:10px;color:var(--cafe);cursor:pointer" onclick="filtroAntig=null;proveedorAntig=\'todos\';$(\'proveedorAntigSelect\').value=\'todos\';renderAntiguedad()">Ver todas</span>':''}</p></div></td></tr>`;
 }
 
 // ═══════════════════════════════════════════════════════
