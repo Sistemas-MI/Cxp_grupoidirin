@@ -222,15 +222,16 @@ tr.vencido td.td-prov{color:var(--rojo)}
 .btn-export.pdf:hover{background:var(--cafe-sm)}
 
 /* ── PROVEEDORES ── */
-.prov-card{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:14px 18px;margin-bottom:8px;box-shadow:var(--sh);transition:.15s}
+.prov-card{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:8px 14px;margin-bottom:5px;box-shadow:var(--sh);transition:.15s;display:flex;align-items:center;gap:14px}
 .prov-card:hover{border-color:var(--dorado)}
-.pc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.pc-nombre{font-size:13px;font-weight:500}
-.pc-total{font-family:'EB Garamond',serif;font-size:18px;color:var(--rojo)}
-.pc-meta{display:flex;gap:12px;margin-top:6px;font-size:10px;color:var(--suave);flex-wrap:wrap}
-.pc-alerta{color:var(--rojo);font-weight:600}
-.pc-bar-wrap{margin-top:8px;background:var(--crema-dark);border-radius:2px;height:4px;overflow:hidden}
+.pc-head{display:flex;flex-direction:column;flex:1 1 auto;min-width:0;gap:1px}
+.pc-nombre{font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-count{font-size:9px;color:var(--suave);white-space:nowrap}
+.pc-bar-wrap{flex:0 0 64px;background:var(--crema-dark);border-radius:2px;height:4px;overflow:hidden}
 .pc-bar-fill{height:100%;background:var(--cafe);border-radius:2px;transition:width .5s}
+.pc-meta{flex:0 0 auto;font-size:9px;font-weight:600;white-space:nowrap;text-align:right;min-width:78px}
+.pc-alerta{color:var(--rojo)}
+.pc-total{font-family:'EB Garamond',serif;font-size:14px;color:var(--rojo);flex:0 0 auto;min-width:88px;text-align:right;white-space:nowrap}
 
 /* ── ANTIGÜEDAD ── */
 .antig-grid{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
@@ -1856,13 +1857,11 @@ function renderProveedores() {
     <div class="prov-card">
       <div class="pc-head">
         <div class="pc-nombre">${nombre}</div>
-        <div class="pc-total">${fmt(d.total)}</div>
-      </div>
-      <div class="pc-meta">
-        <span>${d.count} factura${d.count!==1?'s':''} pendiente${d.count!==1?'s':''}</span>
-        ${d.vencido>0?`<span class="pc-alerta">⚠ Vencido: ${fmt(d.vencido)}</span>`:'<span style="color:var(--verde)">✓ Al corriente</span>'}
+        <div class="pc-count">${d.count} factura${d.count!==1?'s':''} pendiente${d.count!==1?'s':''}</div>
       </div>
       <div class="pc-bar-wrap"><div class="pc-bar-fill" style="width:${Math.round((d.total/maxT)*100)}%"></div></div>
+      <div class="pc-meta">${d.vencido>0?`<span class="pc-alerta">⚠ ${fmt(d.vencido)}</span>`:'<span style="color:var(--verde)">✓ Al corriente</span>'}</div>
+      <div class="pc-total">${fmt(d.total)}</div>
     </div>`).join('') :
     `<div class="empty-state"><div class="es-ico">✅</div><p>Sin cuentas pendientes.</p></div>`;
 }
