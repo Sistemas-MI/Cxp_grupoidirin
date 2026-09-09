@@ -278,6 +278,31 @@ tr.vencido td.td-prov{color:var(--rojo)}
 .report-controls{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
 .rpt-select{appearance:none;-webkit-appearance:none;border:1px solid var(--linea);border-radius:3px;padding:8px 28px 8px 12px;font-size:10px;font-family:'Inter',sans-serif;color:var(--texto);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='%238C7060'/%3E%3C/svg%3E") no-repeat right 10px center;cursor:pointer;outline:none;transition:.15s}
 .rpt-select:focus{border-color:var(--dorado)}
+.rpt-date{border:1px solid var(--linea);border-radius:3px;padding:7px 10px;font-size:10px;font-family:'Inter',sans-serif;color:var(--texto);background:#fff;cursor:pointer;outline:none;transition:.15s}
+.rpt-date:focus{border-color:var(--dorado)}
+
+/* ── ESTADO DE CUENTA POR PROVEEDOR ── */
+.eq-doc{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:28px 32px;box-shadow:var(--sh)}
+.eq-top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--cafe)}
+.eq-empresa-nombre{font-size:15px;font-weight:600;color:var(--texto)}
+.eq-empresa-sub{font-size:10px;color:var(--suave);margin-top:2px;letter-spacing:.05em}
+.eq-titulo{font-family:'EB Garamond',serif;font-size:25px;font-weight:600;text-align:right;color:var(--texto)}
+.eq-meta{margin-top:9px}
+.eq-meta-row{font-size:10px;color:var(--suave);display:flex;justify-content:flex-end;gap:8px;margin-top:2px}
+.eq-meta-row b{color:var(--texto);font-weight:600}
+.eq-prov-box{margin-bottom:18px}
+.eq-prov-eyebrow{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--suave)}
+.eq-prov-nombre{font-size:13.5px;font-weight:600;margin-top:2px}
+.eq-prov-detalle{font-size:10px;color:var(--suave);margin-top:2px}
+.eq-table{width:100%;border-collapse:collapse;margin-top:4px}
+.eq-table thead th{text-align:left;font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--suave);border-bottom:2px solid var(--texto);padding:7px 8px}
+.eq-table th.r,.eq-table td.r{text-align:right}
+.eq-table tbody td{font-size:11.5px;padding:7px 8px;border-bottom:1px solid var(--linea);color:var(--texto)}
+.eq-table tbody tr.eq-pago td{color:#8a6a18}
+.eq-table tbody tr.eq-pago td.mono{color:var(--rojo)}
+.eq-table tr.eq-sub td{border-bottom:none;border-top:1px solid var(--texto);font-weight:600;padding-top:10px}
+.eq-table tr.eq-saldo td{border-top:2px solid var(--texto);font-weight:700;font-size:13.5px;padding-top:11px}
+.eq-empty{padding:40px 20px;text-align:center;color:var(--suave);font-size:11px}
 
 /* ── MODAL ── */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(44,26,16,.6);z-index:200;align-items:flex-start;justify-content:center;padding:20px 16px;overflow-y:auto}
@@ -583,11 +608,17 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
   #pdf-facturas-temp,#pdf-facturas-temp *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
   #pdf-facturas-temp tr{break-inside:avoid}
   #pdf-facturas-temp thead{display:table-header-group}
+  #pdf-estadocuenta-temp{display:block!important;max-width:100%;padding:0}
+  #pdf-estadocuenta-temp,#pdf-estadocuenta-temp *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+  #pdf-estadocuenta-temp .eq-doc{border:none!important;box-shadow:none!important;padding:0!important}
+  #pdf-estadocuenta-temp tr{break-inside:avoid}
+  #pdf-estadocuenta-temp thead{display:table-header-group}
 }
 #pdf-hdr{display:none;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--suave);margin-bottom:16px;border-bottom:1px solid var(--linea);padding-bottom:8px}
 #pdf-prioridad-temp{display:none}
 #pdf-reportes-temp{display:none}
 #pdf-facturas-temp{display:none}
+#pdf-estadocuenta-temp{display:none}
 </style>
 </head>
 <body>
@@ -893,31 +924,48 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
   <section id="tab-reportes" style="display:none">
     <div id="pdf-hdr"></div>
     <div class="report-controls">
+      <select class="rpt-select" id="rptTipo">
+        <option value="ejecutivo" selected>Reporte ejecutivo</option>
+        <option value="estado_cuenta">Estado de cuenta (proveedor)</option>
+      </select>
       <select class="rpt-select" id="rptPeriodo">
         <option value="semana">Esta semana</option>
         <option value="mes" selected>Este mes</option>
         <option value="trimestre">Trimestre</option>
         <option value="year">Todo el año</option>
       </select>
+      <select class="rpt-select" id="eqProveedorSelect" style="display:none;min-width:170px">
+        <option value="">— Selecciona proveedor —</option>
+      </select>
+      <input type="date" class="rpt-date" id="eqDesde" title="Desde" style="display:none">
+      <span id="eqDashSep" style="display:none;color:var(--suave);font-size:11px">→</span>
+      <input type="date" class="rpt-date" id="eqHasta" title="Hasta" style="display:none">
       <button class="btn-export" id="btnExportCSV">⬇ Exportar CSV</button>
       <button class="btn-export pdf" id="btnExportPDF">⬇ PDF</button>
     </div>
-    <div class="rpt-grid">
-      <div>
-        <div class="chart-card">
-          <div class="chart-head">Pagado por período</div>
-          <div id="chartBars"></div>
+
+    <div id="rptEjecutivoWrap">
+      <div class="rpt-grid">
+        <div>
+          <div class="chart-card">
+            <div class="chart-head">Pagado por período</div>
+            <div id="chartBars"></div>
+          </div>
+        </div>
+        <div>
+          <div class="chart-card">
+            <div class="chart-head">Pendiente por empresa</div>
+            <div id="chartEmpresas"></div>
+          </div>
         </div>
       </div>
-      <div>
-        <div class="chart-card">
-          <div class="chart-head">Pendiente por empresa</div>
-          <div id="chartEmpresas"></div>
-        </div>
-      </div>
+      <p class="sec-label">Estadísticas por empresa</p>
+      <div id="reporteEmpresas"></div>
     </div>
-    <p class="sec-label">Estadísticas por empresa</p>
-    <div id="reporteEmpresas"></div>
+
+    <div id="eqPreviewWrap" style="display:none">
+      <div class="eq-doc" id="eqDoc"></div>
+    </div>
   </section>
 
 </main>
@@ -1137,6 +1185,16 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
           <label>Razón social (Proveedor / Acreedor) <span class="req">*</span></label>
           <input type="text" id="pvRazonSocial" placeholder="Nombre o razón social">
           <span class="err-tip">Campo requerido (mín. 2 caracteres)</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Dirección</label>
+          <input type="text" id="pvDireccion" placeholder="Baja California Sur, México">
+        </div>
+        <div class="form-group">
+          <label>Giro</label>
+          <input type="text" id="pvGiro" placeholder="Prestadora de servicios">
         </div>
       </div>
       <div class="form-row">
@@ -1996,6 +2054,8 @@ function abrirEdicionProveedor(id) {
 
 function llenarModalProveedor(p={}) {
   $('pvRazonSocial').value = p.razon_social || '';
+  $('pvDireccion').value   = p.direccion    || '';
+  $('pvGiro').value        = p.giro         || '';
   $('pvRfc').value         = p.rfc          || '';
   $('pvMoneda').value      = p.moneda       || 'MXN';
   $('pvTelefono').value    = p.telefono     || '';
@@ -2007,6 +2067,8 @@ function llenarModalProveedor(p={}) {
 function leerModalProveedor() {
   return {
     razon_social: $('pvRazonSocial').value.trim(),
+    direccion:    $('pvDireccion').value.trim()  || null,
+    giro:         $('pvGiro').value.trim()       || null,
     rfc:          $('pvRfc').value.trim().toUpperCase()      || null,
     moneda:       $('pvMoneda').value     || 'MXN',
     telefono:     $('pvTelefono').value.trim()  || null,
@@ -2236,6 +2298,208 @@ function renderReportes() {
     </div>`;
   }).join('');
 }
+
+// ═══════════════════════════════════════════════════════
+//  ESTADO DE CUENTA POR PROVEEDOR
+//  El usuario elige Proveedor + rango de fechas. Se listan las facturas de ese
+//  proveedor cuya "fecha_factura" cae en el rango, y todos los pagos/abonos que
+//  ya se le han aplicado a esas facturas (sin importar cuándo se pagaron), para
+//  que "Saldo actual" cuadre exactamente con lo que aún se le debe de ellas.
+// ═══════════════════════════════════════════════════════
+function actualizarControlesReporte() {
+  const esEQ = $('rptTipo').value === 'estado_cuenta';
+  $('rptPeriodo').style.display        = esEQ ? 'none' : '';
+  $('eqProveedorSelect').style.display = esEQ ? '' : 'none';
+  $('eqDesde').style.display           = esEQ ? '' : 'none';
+  $('eqDashSep').style.display         = esEQ ? '' : 'none';
+  $('eqHasta').style.display           = esEQ ? '' : 'none';
+  $('rptEjecutivoWrap').style.display  = esEQ ? 'none' : '';
+  $('eqPreviewWrap').style.display     = esEQ ? '' : 'none';
+
+  if (esEQ) {
+    poblarProveedoresEstadoCuenta();
+    if (!$('eqDesde').value || !$('eqHasta').value) {
+      const now = today();
+      $('eqDesde').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      $('eqHasta').value = now.toISOString().split('T')[0];
+    }
+    renderEstadoCuenta();
+  }
+}
+
+function poblarProveedoresEstadoCuenta() {
+  const sel = $('eqProveedorSelect');
+  const cur = sel.value;
+  const provs = [...new Set(todosReg.map(r=>r.proveedor).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+  sel.innerHTML = '<option value="">— Selecciona proveedor —</option>' +
+    provs.map(p=>`<option value="${p.replace(/"/g,'&quot;')}">${p.replace(/</g,'&lt;')}</option>`).join('');
+  if (provs.includes(cur)) sel.value = cur;
+}
+
+// Reúne facturas + pagos del proveedor/rango elegidos. Devuelve null si faltan datos.
+function datosEstadoCuenta() {
+  const provSel = $('eqProveedorSelect').value;
+  const desde   = $('eqDesde').value;
+  const hasta   = $('eqHasta').value;
+  if (!provSel || !desde || !hasta) return null;
+
+  const facturas = todosReg.filter(r =>
+    r.proveedor === provSel && r.fecha_factura && r.fecha_factura >= desde && r.fecha_factura <= hasta
+  ).sort((a,b)=>(a.fecha_factura||'').localeCompare(b.fecha_factura||''));
+
+  const pagos = [];
+  facturas.forEach(r=>{
+    if (Array.isArray(r.abonos) && r.abonos.length) {
+      r.abonos.forEach(a => pagos.push({
+        fecha: a.fecha, factura: r.no_factura||'—',
+        referencia: a.nota || r.cta_pago || '—',
+        importe: -(parseFloat(a.monto)||0),
+      }));
+    } else if (r.status === 'pagada') {
+      pagos.push({
+        fecha: r.fecha_pago || r.fecha_factura, factura: r.no_factura||'—',
+        referencia: r.cta_pago || '—',
+        importe: -(parseFloat(r.total_mn)||0),
+      });
+    } else if (parseFloat(r.abonado) > 0) {
+      pagos.push({
+        fecha: r.fecha_pago || r.fecha_factura, factura: r.no_factura||'—',
+        referencia: r.cta_pago || '—',
+        importe: -(parseFloat(r.abonado)||0),
+      });
+    }
+  });
+  pagos.sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+
+  const totalFacturas = facturas.reduce((s,r)=>s+(parseFloat(r.total_mn)||0), 0);
+  const totalPagos    = pagos.reduce((s,p)=>s+p.importe, 0); // ya viene negativo
+  const saldo         = totalFacturas + totalPagos;
+
+  return {provSel, desde, hasta, facturas, pagos, totalFacturas, totalPagos, saldo};
+}
+
+function fechaLargaEQ(iso) {
+  if (!iso) return '—';
+  return new Date(iso+'T12:00:00').toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+}
+
+function construirHtmlEstadoCuenta(d) {
+  const empresaNombre = empresaActual==='todas' ? 'Todas las empresas' : (EMPRESAS[empresaActual]?.nombre || empresaActual);
+  const provInfo       = todosProveedores.find(p => (p.razon_social||'') === d.provSel);
+  const provDetalleHtml = [provInfo?.direccion, provInfo?.giro].filter(Boolean)
+    .map(t => `<div class="eq-prov-detalle">${t.toString().replace(/</g,'&lt;')}</div>`).join('');
+
+  const filasFactura = d.facturas.map(r=>`
+    <tr>
+      <td>${fmtDate(r.fecha_factura)}</td>
+      <td>${(r.no_factura||'—').toString().replace(/</g,'&lt;')}</td>
+      <td>${(r.servicio||r.area_evento||'—').toString().replace(/</g,'&lt;')}</td>
+      <td class="r mono">${fmt(parseFloat(r.total_mn)||0)}</td>
+    </tr>`).join('');
+
+  const filasPago = d.pagos.map(p=>`
+    <tr class="eq-pago">
+      <td>${fmtDate(p.fecha)}</td>
+      <td>Pago</td>
+      <td>${(p.referencia||'—').toString().replace(/</g,'&lt;')}</td>
+      <td class="r mono">-${fmt(Math.abs(p.importe))}</td>
+    </tr>`).join('');
+
+  return `
+    <div class="eq-top">
+      <div>
+        <div class="eq-empresa-nombre">${empresaNombre}</div>
+        <div class="eq-empresa-sub">Cuentas por Pagar</div>
+      </div>
+      <div>
+        <div class="eq-titulo">Estado de Cuenta</div>
+        <div class="eq-meta">
+          <div class="eq-meta-row"><span>Periodo:</span><b>${fechaLargaEQ(d.desde)} — ${fechaLargaEQ(d.hasta)}</b></div>
+          <div class="eq-meta-row"><span>Moneda:</span><b>Peso Mexicano (MXN)</b></div>
+          <div class="eq-meta-row"><span>Fecha de reporte:</span><b>${fechaLargaEQ(today().toISOString().split('T')[0])}</b></div>
+        </div>
+      </div>
+    </div>
+    <div class="eq-prov-box">
+      <div class="eq-prov-eyebrow">Proveedor</div>
+      <div class="eq-prov-nombre">${d.provSel.replace(/</g,'&lt;')}</div>
+      ${provDetalleHtml}
+    </div>
+    <table class="eq-table">
+      <thead><tr><th>Fecha</th><th>Factura</th><th>Referencia</th><th class="r">Importe</th></tr></thead>
+      <tbody>
+        ${filasFactura || `<tr><td colspan="4" style="text-align:center;color:var(--suave);padding:16px">Sin facturas registradas en este periodo.</td></tr>`}
+        ${filasPago}
+        <tr class="eq-sub"><td colspan="3">Facturas total</td><td class="r mono">${fmt(d.totalFacturas)}</td></tr>
+        <tr class="eq-sub"><td colspan="3">Pagos totales</td><td class="r mono">-${fmt(Math.abs(d.totalPagos))}</td></tr>
+        <tr class="eq-saldo"><td colspan="3">Saldo actual</td><td class="r mono">${fmt(d.saldo)}</td></tr>
+      </tbody>
+    </table>`;
+}
+
+function renderEstadoCuenta() {
+  const d = datosEstadoCuenta();
+  $('eqDoc').innerHTML = d
+    ? construirHtmlEstadoCuenta(d)
+    : `<div class="eq-empty">Selecciona un proveedor y el rango de fechas para generar el estado de cuenta.</div>`;
+}
+
+function exportarEstadoCuentaCSV() {
+  const d = datosEstadoCuenta();
+  if (!d) { toast('Selecciona proveedor y fechas antes de exportar', 'err'); return; }
+  const empresaNombre = empresaActual==='todas' ? 'Todas las empresas' : (EMPRESAS[empresaActual]?.nombre || empresaActual);
+  const provInfo = todosProveedores.find(p => (p.razon_social||'') === d.provSel);
+  const filas = [
+    ['Estado de Cuenta'],
+    ['Empresa', empresaNombre],
+    ['Proveedor', d.provSel],
+    ...(provInfo?.direccion ? [['Dirección', provInfo.direccion]] : []),
+    ...(provInfo?.giro ? [['Giro', provInfo.giro]] : []),
+    ['Periodo', `${d.desde} a ${d.hasta}`],
+    ['Moneda', 'Peso Mexicano (MXN)'],
+    ['Fecha de reporte', today().toISOString().split('T')[0]],
+    [],
+    ['Fecha','Factura','Referencia','Importe'],
+  ];
+  d.facturas.forEach(r=>filas.push([r.fecha_factura, r.no_factura||'', r.servicio||r.area_evento||'', (parseFloat(r.total_mn)||0).toFixed(2)]));
+  d.pagos.forEach(p=>filas.push([p.fecha||'', 'Pago', p.referencia||'', p.importe.toFixed(2)]));
+  filas.push(['','','Facturas total', d.totalFacturas.toFixed(2)]);
+  filas.push(['','','Pagos totales', d.totalPagos.toFixed(2)]);
+  filas.push(['','','Saldo actual', d.saldo.toFixed(2)]);
+
+  const csv = filas.map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'}));
+  a.download = `EstadoCuenta_${d.provSel.replace(/[^a-z0-9]+/gi,'_')}_${d.desde}_a_${d.hasta}.csv`;
+  a.click();
+  toast('CSV de estado de cuenta exportado', 'ok');
+}
+
+function generarPDFEstadoCuenta() {
+  const d = datosEstadoCuenta();
+  if (!d) { toast('Selecciona proveedor y fechas antes de generar el PDF', 'err'); return; }
+
+  let temp = document.getElementById('pdf-estadocuenta-temp');
+  if (temp) temp.remove();
+  temp = document.createElement('section');
+  temp.id = 'pdf-estadocuenta-temp';
+  temp.innerHTML = `<div class="eq-doc">${construirHtmlEstadoCuenta(d)}</div>`;
+  document.body.appendChild(temp);
+
+  document.querySelectorAll('section[id^="tab-"]').forEach(s=>{ s._pd = s.style.display; s.style.display = 'none'; });
+
+  window.print();
+
+  setTimeout(() => {
+    document.querySelectorAll('section[id^="tab-"]').forEach(s=>{ s.style.display = s._pd; });
+    temp.remove();
+  }, 600);
+}
+
+$('rptTipo').addEventListener('change', actualizarControlesReporte);
+$('eqProveedorSelect').addEventListener('change', renderEstadoCuenta);
+$('eqDesde').addEventListener('change', renderEstadoCuenta);
+$('eqHasta').addEventListener('change', renderEstadoCuenta);
 
 // ═══════════════════════════════════════════════════════
 //  MODAL — VALIDACIÓN
@@ -3053,6 +3317,7 @@ $('confirmSi').addEventListener('click',async()=>{
 //  EXPORTAR CSV
 // ═══════════════════════════════════════════════════════
 $('btnExportCSV').addEventListener('click',()=>{
+  if ($('rptTipo').value === 'estado_cuenta') { exportarEstadoCuentaCSV(); return; }
   const regs=regsFiltrados();
   const cols=['empresa','proveedor','no_factura','fecha_factura','area_evento','solicita','usd','subtotal','iva','ret_iva','ret_isr','total_mn','abonado','saldo','servicio','fecha_vencimiento','dias','fecha_pago','cta_pago','status','obs'];
   const heads=['Empresa','Proveedor','No. Factura','Fecha Factura','Área/Evento','Solicita','Moneda','Subtotal','IVA','Ret. IVA','Ret. ISR','Monto Total','Abonado','Saldo','Servicio','Fecha Vencimiento','Días','Fecha Pago','Cuenta Pago','Status','Observaciones'];
@@ -3233,7 +3498,10 @@ $('btnExportFacturasPDF').addEventListener('click', generarPDFFacturasFiltradas)
 // ═══════════════════════════════════════════════════════
 //  EXPORTAR PDF
 // ═══════════════════════════════════════════════════════
-$('btnExportPDF').addEventListener('click', generarPDFReportes);
+$('btnExportPDF').addEventListener('click', () => {
+  if ($('rptTipo').value === 'estado_cuenta') generarPDFEstadoCuenta();
+  else generarPDFReportes();
+});
 
 function generarPDFReportes() {
   const periodo  = $('rptPeriodo').value;
