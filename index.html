@@ -283,7 +283,8 @@ tr.vencido td.td-prov{color:var(--rojo)}
 
 /* ── ESTADO DE CUENTA POR PROVEEDOR ── */
 @keyframes eqFadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.eq-doc{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:28px 32px;box-shadow:var(--sh);animation:eqFadeUp .38s ease both}
+.eq-doc{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:28px 32px;box-shadow:var(--sh)}
+.eq-doc.eq-anim-in{animation:eqFadeUp .38s ease both}
 .eq-top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--cafe)}
 .eq-empresa-nombre{font-size:15px;font-weight:600;color:var(--texto)}
 .eq-empresa-sub{font-size:10px;color:var(--suave);margin-top:2px;letter-spacing:.05em}
@@ -2417,33 +2418,15 @@ function fechaLargaEQ(iso) {
   return new Date(iso+'T12:00:00').toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
 }
 
-function construirHtmlEstadoCuenta(d) {
+// Piezas compartidas entre la vista en pantalla y el PDF: encabezado, recuadro
+// de proveedor y filas de la tabla (facturas + pagos).
+function partesEstadoCuenta(d) {
   const empresaNombre = empresaActual==='todas' ? 'Todas las empresas' : (EMPRESAS[empresaActual]?.nombre || empresaActual);
   const provInfo       = todosProveedores.find(p => (p.razon_social||'') === d.provSel);
   const provDetalleHtml = [provInfo?.direccion, provInfo?.giro].filter(Boolean)
     .map(t => `<div class="eq-prov-detalle">${t.toString().replace(/</g,'&lt;')}</div>`).join('');
 
-  const filasFactura = d.facturas.map(r=>`
-    <tr class="eq-row" data-tipo="factura">
-      <td>${fmtDate(r.fecha_factura)}</td>
-      <td>${(r.no_factura||'—').toString().replace(/</g,'&lt;')}</td>
-      <td>${(r.servicio||r.area_evento||'—').toString().replace(/</g,'&lt;')}</td>
-      <td class="r mono">${fmt(parseFloat(r.total_mn)||0)}</td>
-    </tr>`).join('');
-
-  const filasPago = d.pagos.map(p=>`
-    <tr class="eq-pago eq-row" data-tipo="pago">
-      <td>${fmtDate(p.fecha)}</td>
-      <td>Pago</td>
-      <td>${(p.referencia||'—').toString().replace(/</g,'&lt;')}</td>
-      <td class="r mono">-${fmt(Math.abs(p.importe))}</td>
-    </tr>`).join('');
-
-  const totalFacturasN = d.facturas.length;
-  const totalPagosN    = d.pagos.length;
-  const pctPagado      = d.totalFacturas>0 ? Math.min(100, Math.round((Math.abs(d.totalPagos)/d.totalFacturas)*100)) : 0;
-
-  return `
+  const encabezadoHtml = `
     <div class="eq-top">
       <div>
         <div class="eq-empresa-nombre">${empresaNombre}</div>
@@ -2462,7 +2445,48 @@ function construirHtmlEstadoCuenta(d) {
       <div class="eq-prov-eyebrow">Proveedor</div>
       <div class="eq-prov-nombre">${d.provSel.replace(/</g,'&lt;')}</div>
       ${provDetalleHtml}
-    </div>
+    </div>`;
+
+  const filasFactura = d.facturas.map(r=>`
+    <tr class="eq-row" data-tipo="factura">
+      <td>${fmtDate(r.fecha_factura)}</td>
+      <td>${(r.no_factura||'—').toString().replace(/</g,'&lt;')}</td>
+      <td>${(r.servicio||r.area_evento||'—').toString().replace(/</g,'&lt;')}</td>
+      <td class="r mono">${fmt(parseFloat(r.total_mn)||0)}</td>
+    </tr>`).join('');
+
+  const filasPago = d.pagos.map(p=>`
+    <tr class="eq-pago eq-row" data-tipo="pago">
+      <td>${fmtDate(p.fecha)}</td>
+      <td>Pago</td>
+      <td>${(p.referencia||'—').toString().replace(/</g,'&lt;')}</td>
+      <td class="r mono">-${fmt(Math.abs(p.importe))}</td>
+    </tr>`).join('');
+
+  const tablaHtml = `
+    <table class="eq-table">
+      <thead><tr><th>Fecha</th><th>Factura</th><th>Referencia</th><th class="r">Importe</th></tr></thead>
+      <tbody>
+        ${filasFactura || `<tr><td colspan="4" style="text-align:center;color:var(--suave);padding:16px">Sin facturas registradas en este periodo.</td></tr>`}
+        ${filasPago}
+        <tr class="eq-sub"><td colspan="3">Facturas total</td><td class="r mono">${fmt(d.totalFacturas)}</td></tr>
+        <tr class="eq-sub"><td colspan="3">Pagos totales</td><td class="r mono">-${fmt(Math.abs(d.totalPagos))}</td></tr>
+        <tr class="eq-saldo"><td colspan="3">Saldo actual</td><td class="r mono">${fmt(d.saldo)}</td></tr>
+      </tbody>
+    </table>`;
+
+  return {encabezadoHtml, tablaHtml};
+}
+
+// Versión en pantalla: agrega KPIs animados, barra de avance y pills de filtro.
+function construirHtmlEstadoCuenta(d) {
+  const {encabezadoHtml, tablaHtml} = partesEstadoCuenta(d);
+  const totalFacturasN = d.facturas.length;
+  const totalPagosN    = d.pagos.length;
+  const pctPagado      = d.totalFacturas>0 ? Math.min(100, Math.round((Math.abs(d.totalPagos)/d.totalFacturas)*100)) : 0;
+
+  return `
+    ${encabezadoHtml}
 
     <div class="eq-kpis">
       <div class="eq-kpi eq-k-fact"><div class="eq-kpi-lbl">Facturado</div><div class="eq-kpi-val mono" data-countup="${d.totalFacturas}">$0.00</div></div>
@@ -2485,25 +2509,26 @@ function construirHtmlEstadoCuenta(d) {
       <button type="button" class="btn-export" id="btnCopiarResumenEQ" title="Copiar resumen al portapapeles">⧉ Copiar resumen</button>
     </div>
 
-    <div class="eq-table-wrap">
-    <table class="eq-table">
-      <thead><tr><th>Fecha</th><th>Factura</th><th>Referencia</th><th class="r">Importe</th></tr></thead>
-      <tbody>
-        ${filasFactura || `<tr><td colspan="4" style="text-align:center;color:var(--suave);padding:16px">Sin facturas registradas en este periodo.</td></tr>`}
-        ${filasPago}
-        <tr class="eq-sub"><td colspan="3">Facturas total</td><td class="r mono">${fmt(d.totalFacturas)}</td></tr>
-        <tr class="eq-sub"><td colspan="3">Pagos totales</td><td class="r mono">-${fmt(Math.abs(d.totalPagos))}</td></tr>
-        <tr class="eq-saldo"><td colspan="3">Saldo actual</td><td class="r mono">${fmt(d.saldo)}</td></tr>
-      </tbody>
-    </table>
-    </div>`;
+    <div class="eq-table-wrap">${tablaHtml}</div>`;
+}
+
+// Versión para el PDF / impresión: solo lo que se le manda al proveedor —
+// encabezado, recuadro de proveedor y la tabla con los totales. Sin KPIs,
+// sin barra de avance, sin pills — nada de eso debe imprimirse.
+function construirHtmlEstadoCuentaPDF(d) {
+  const {encabezadoHtml, tablaHtml} = partesEstadoCuenta(d);
+  return `${encabezadoHtml}${tablaHtml}`;
 }
 
 function renderEstadoCuenta() {
   const d = datosEstadoCuenta();
-  $('eqDoc').innerHTML = d
+  const eqDoc = $('eqDoc');
+  eqDoc.innerHTML = d
     ? construirHtmlEstadoCuenta(d)
     : `<div class="eq-empty">Selecciona un proveedor y el rango de fechas para generar el estado de cuenta.</div>`;
+  eqDoc.classList.remove('eq-anim-in');
+  void eqDoc.offsetWidth; // fuerza reflow para poder repetir la animación cada vez
+  eqDoc.classList.add('eq-anim-in');
   if (d) activarInteraccionesEstadoCuenta(d);
 }
 
@@ -2584,7 +2609,7 @@ function generarPDFEstadoCuenta() {
   if (temp) temp.remove();
   temp = document.createElement('section');
   temp.id = 'pdf-estadocuenta-temp';
-  temp.innerHTML = `<div class="eq-doc">${construirHtmlEstadoCuenta(d)}</div>`;
+  temp.innerHTML = `<div class="eq-doc">${construirHtmlEstadoCuentaPDF(d)}</div>`;
   document.body.appendChild(temp);
 
   document.querySelectorAll('section[id^="tab-"]').forEach(s=>{ s._pd = s.style.display; s.style.display = 'none'; });
