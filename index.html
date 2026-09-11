@@ -282,7 +282,8 @@ tr.vencido td.td-prov{color:var(--rojo)}
 .rpt-date:focus{border-color:var(--dorado)}
 
 /* ── ESTADO DE CUENTA POR PROVEEDOR ── */
-.eq-doc{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:28px 32px;box-shadow:var(--sh)}
+@keyframes eqFadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.eq-doc{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:28px 32px;box-shadow:var(--sh);animation:eqFadeUp .38s ease both}
 .eq-top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--cafe)}
 .eq-empresa-nombre{font-size:15px;font-weight:600;color:var(--texto)}
 .eq-empresa-sub{font-size:10px;color:var(--suave);margin-top:2px;letter-spacing:.05em}
@@ -294,15 +295,42 @@ tr.vencido td.td-prov{color:var(--rojo)}
 .eq-prov-eyebrow{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--suave)}
 .eq-prov-nombre{font-size:13.5px;font-weight:600;margin-top:2px}
 .eq-prov-detalle{font-size:10px;color:var(--suave);margin-top:2px}
+
+/* mini-KPIs + barra de avance del estado de cuenta (reutilizan kpi-card / paleta existente) */
+.eq-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:680px){.eq-kpis{grid-template-columns:1fr 1fr}}
+.eq-kpi{background:var(--crema);border:1px solid var(--linea);border-radius:var(--r);padding:11px 13px;transition:.2s}
+.eq-kpi:hover{border-color:var(--dorado);box-shadow:0 4px 14px rgba(44,26,16,.1);transform:translateY(-1px)}
+.eq-kpi-lbl{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--suave);margin-bottom:5px}
+.eq-kpi-val{font-family:'EB Garamond',serif;font-size:17px;font-weight:500;color:var(--texto);line-height:1.1}
+.eq-kpi.eq-k-pagado .eq-kpi-val{color:var(--verde)}
+.eq-kpi.eq-k-saldo .eq-kpi-val{color:var(--rojo)}
+.eq-progress-wrap{margin-bottom:20px}
+.eq-progress-lbl{display:flex;justify-content:space-between;font-size:9px;color:var(--suave);letter-spacing:.05em;margin-bottom:5px}
+.eq-progress-lbl b{color:var(--texto)}
+.eq-progress{background:var(--crema-dark);border-radius:3px;height:7px;overflow:hidden}
+.eq-progress-fill{height:100%;width:0;background:var(--verde);border-radius:3px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+
+/* pills de filtro de movimientos */
+.eq-pills{display:flex;gap:6px;margin-bottom:12px}
+.eq-pill{border:1px solid var(--linea);background:#fff;border-radius:20px;padding:5px 13px;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--suave);cursor:pointer;transition:.18s;font-family:'Inter',sans-serif}
+.eq-pill:hover{border-color:var(--dorado);color:var(--texto)}
+.eq-pill.active{background:var(--cafe);border-color:var(--cafe);color:var(--crema)}
+
+/* tabla con encabezado fijo para periodos largos */
+.eq-table-wrap{max-height:480px;overflow-y:auto;border-radius:var(--r)}
 .eq-table{width:100%;border-collapse:collapse;margin-top:4px}
-.eq-table thead th{text-align:left;font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--suave);border-bottom:2px solid var(--texto);padding:7px 8px}
+.eq-table thead th{position:sticky;top:0;z-index:1;background:#fff;text-align:left;font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--suave);border-bottom:2px solid var(--texto);padding:7px 8px}
 .eq-table th.r,.eq-table td.r{text-align:right}
-.eq-table tbody td{font-size:11.5px;padding:7px 8px;border-bottom:1px solid var(--linea);color:var(--texto)}
+.eq-table tbody td{font-size:11.5px;padding:7px 8px;border-bottom:1px solid var(--linea);color:var(--texto);transition:background .15s}
+.eq-table tbody tr:hover td{background:var(--crema-dark)}
 .eq-table tbody tr.eq-pago td{color:#8a6a18}
 .eq-table tbody tr.eq-pago td.mono{color:var(--rojo)}
 .eq-table tr.eq-sub td{border-bottom:none;border-top:1px solid var(--texto);font-weight:600;padding-top:10px}
 .eq-table tr.eq-saldo td{border-top:2px solid var(--texto);font-weight:700;font-size:13.5px;padding-top:11px}
+.eq-table tbody tr.eq-row-hide{display:none}
 .eq-empty{padding:40px 20px;text-align:center;color:var(--suave);font-size:11px}
+.eq-actions{display:flex;justify-content:flex-end;gap:8px;margin:-4px 0 12px}
 
 /* ── MODAL ── */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(44,26,16,.6);z-index:200;align-items:flex-start;justify-content:center;padding:20px 16px;overflow-y:auto}
@@ -2257,7 +2285,7 @@ function renderReportes() {
     const pct=Math.max(4,Math.round((v/maxV)*100));
     return `<div class="chart-row">
       <div class="chart-lbl">${k}</div>
-      <div class="chart-bar-wrap"><div class="chart-bar verde" style="width:${pct}%">${v>0?`<span>${fmtK(v)}</span>`:''}</div></div>
+      <div class="chart-bar-wrap"><div class="chart-bar verde" data-pct="${pct}" style="width:0">${v>0?`<span>${fmtK(v)}</span>`:''}</div></div>
       <div class="chart-val">${v>0?fmtK(v):''}</div>
     </div>`;
   }).join('');
@@ -2270,10 +2298,13 @@ function renderReportes() {
     if (!allE) return '';
     return `<div class="chart-row">
       <div class="chart-lbl" style="min-width:96px">${info.short}</div>
-      <div class="chart-bar-wrap"><div class="chart-bar dorado" style="width:${pct}%">${pendE>0?`<span>${fmtK(pendE)}</span>`:''}</div></div>
+      <div class="chart-bar-wrap"><div class="chart-bar dorado" data-pct="${pct}" style="width:0">${pendE>0?`<span>${fmtK(pendE)}</span>`:''}</div></div>
       <div class="chart-val">${fmtK(pendE)}</div>
     </div>`;
   }).join('');
+  requestAnimationFrame(()=> requestAnimationFrame(()=>{
+    document.querySelectorAll('#chartBars .chart-bar, #chartEmpresas .chart-bar').forEach(b=>{ b.style.width = b.getAttribute('data-pct') + '%'; });
+  }));
 
   $('reporteEmpresas').innerHTML=Object.entries(EMPRESAS).map(([key,info])=>{
     const er=regsBase().filter(r=>r.empresa===key);
@@ -2293,10 +2324,13 @@ function renderReportes() {
         <div><div style="font-size:8px;color:var(--suave);letter-spacing:.1em;margin-bottom:2px">PENDIENTE</div><div class="k-val" style="color:var(--rojo)">${fmtK(pendE)}</div></div>
       </div>
       <div style="margin-top:10px;background:var(--crema-dark);border-radius:2px;height:5px;overflow:hidden">
-        <div style="height:100%;background:var(--verde);border-radius:2px;width:${pct}%;transition:width .5s"></div>
+        <div class="eq-anim-bar" data-pct="${pct}" style="height:100%;background:var(--verde);border-radius:2px;width:0;transition:width .6s cubic-bezier(.4,0,.2,1)"></div>
       </div>
     </div>`;
   }).join('');
+  requestAnimationFrame(()=> requestAnimationFrame(()=>{
+    document.querySelectorAll('#reporteEmpresas .eq-anim-bar').forEach(b=>{ b.style.width = b.getAttribute('data-pct') + '%'; });
+  }));
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2390,7 +2424,7 @@ function construirHtmlEstadoCuenta(d) {
     .map(t => `<div class="eq-prov-detalle">${t.toString().replace(/</g,'&lt;')}</div>`).join('');
 
   const filasFactura = d.facturas.map(r=>`
-    <tr>
+    <tr class="eq-row" data-tipo="factura">
       <td>${fmtDate(r.fecha_factura)}</td>
       <td>${(r.no_factura||'—').toString().replace(/</g,'&lt;')}</td>
       <td>${(r.servicio||r.area_evento||'—').toString().replace(/</g,'&lt;')}</td>
@@ -2398,12 +2432,16 @@ function construirHtmlEstadoCuenta(d) {
     </tr>`).join('');
 
   const filasPago = d.pagos.map(p=>`
-    <tr class="eq-pago">
+    <tr class="eq-pago eq-row" data-tipo="pago">
       <td>${fmtDate(p.fecha)}</td>
       <td>Pago</td>
       <td>${(p.referencia||'—').toString().replace(/</g,'&lt;')}</td>
       <td class="r mono">-${fmt(Math.abs(p.importe))}</td>
     </tr>`).join('');
+
+  const totalFacturasN = d.facturas.length;
+  const totalPagosN    = d.pagos.length;
+  const pctPagado      = d.totalFacturas>0 ? Math.min(100, Math.round((Math.abs(d.totalPagos)/d.totalFacturas)*100)) : 0;
 
   return `
     <div class="eq-top">
@@ -2425,6 +2463,29 @@ function construirHtmlEstadoCuenta(d) {
       <div class="eq-prov-nombre">${d.provSel.replace(/</g,'&lt;')}</div>
       ${provDetalleHtml}
     </div>
+
+    <div class="eq-kpis">
+      <div class="eq-kpi eq-k-fact"><div class="eq-kpi-lbl">Facturado</div><div class="eq-kpi-val mono" data-countup="${d.totalFacturas}">$0.00</div></div>
+      <div class="eq-kpi eq-k-pagado"><div class="eq-kpi-lbl">Pagado</div><div class="eq-kpi-val mono" data-countup="${Math.abs(d.totalPagos)}">$0.00</div></div>
+      <div class="eq-kpi eq-k-saldo"><div class="eq-kpi-lbl">Saldo actual</div><div class="eq-kpi-val mono" data-countup="${d.saldo}">$0.00</div></div>
+      <div class="eq-kpi eq-k-cnt"><div class="eq-kpi-lbl">Movimientos</div><div class="eq-kpi-val">${totalFacturasN + totalPagosN}<span style="font-size:10px;color:var(--suave);font-family:'Inter',sans-serif"> (${totalFacturasN}F · ${totalPagosN}P)</span></div></div>
+    </div>
+
+    <div class="eq-progress-wrap">
+      <div class="eq-progress-lbl"><span>Avance de pago</span><b>${pctPagado}%</b></div>
+      <div class="eq-progress"><div class="eq-progress-fill" data-progress="${pctPagado}"></div></div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div class="eq-pills">
+        <button type="button" class="eq-pill active" data-filtro="todo">Todo</button>
+        <button type="button" class="eq-pill" data-filtro="factura">Facturas</button>
+        <button type="button" class="eq-pill" data-filtro="pago">Pagos</button>
+      </div>
+      <button type="button" class="btn-export" id="btnCopiarResumenEQ" title="Copiar resumen al portapapeles">⧉ Copiar resumen</button>
+    </div>
+
+    <div class="eq-table-wrap">
     <table class="eq-table">
       <thead><tr><th>Fecha</th><th>Factura</th><th>Referencia</th><th class="r">Importe</th></tr></thead>
       <tbody>
@@ -2434,7 +2495,8 @@ function construirHtmlEstadoCuenta(d) {
         <tr class="eq-sub"><td colspan="3">Pagos totales</td><td class="r mono">-${fmt(Math.abs(d.totalPagos))}</td></tr>
         <tr class="eq-saldo"><td colspan="3">Saldo actual</td><td class="r mono">${fmt(d.saldo)}</td></tr>
       </tbody>
-    </table>`;
+    </table>
+    </div>`;
 }
 
 function renderEstadoCuenta() {
@@ -2442,6 +2504,45 @@ function renderEstadoCuenta() {
   $('eqDoc').innerHTML = d
     ? construirHtmlEstadoCuenta(d)
     : `<div class="eq-empty">Selecciona un proveedor y el rango de fechas para generar el estado de cuenta.</div>`;
+  if (d) activarInteraccionesEstadoCuenta(d);
+}
+
+// Cuenta ascendente para los mini-KPIs, barra de avance animada,
+// pills para filtrar Facturas/Pagos y copiar un resumen de texto plano.
+function activarInteraccionesEstadoCuenta(d) {
+  document.querySelectorAll('#eqDoc [data-countup]').forEach(el=>{
+    const to = parseFloat(el.getAttribute('data-countup')) || 0;
+    const t0 = performance.now(), dur = 550;
+    function paso(t){
+      const p = Math.min(1, (t - t0) / dur);
+      const ease = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(to * ease);
+      if (p < 1) requestAnimationFrame(paso);
+    }
+    requestAnimationFrame(paso);
+  });
+
+  const fill = document.querySelector('#eqDoc .eq-progress-fill');
+  if (fill) requestAnimationFrame(()=> requestAnimationFrame(()=>{ fill.style.width = fill.getAttribute('data-progress') + '%'; }));
+
+  document.querySelectorAll('#eqDoc .eq-pill').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#eqDoc .eq-pill').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const f = btn.getAttribute('data-filtro');
+      document.querySelectorAll('#eqDoc tr.eq-row').forEach(tr=>{
+        const mostrar = f === 'todo' || tr.getAttribute('data-tipo') === f;
+        tr.classList.toggle('eq-row-hide', !mostrar);
+      });
+    });
+  });
+
+  const btnCopiar = $('btnCopiarResumenEQ');
+  if (btnCopiar) btnCopiar.addEventListener('click', async ()=>{
+    const resumen = `Estado de Cuenta — ${d.provSel}\nPeriodo: ${fechaLargaEQ(d.desde)} — ${fechaLargaEQ(d.hasta)}\nFacturado: ${fmt(d.totalFacturas)}\nPagado: ${fmt(Math.abs(d.totalPagos))}\nSaldo actual: ${fmt(d.saldo)}`;
+    try { await navigator.clipboard.writeText(resumen); toast('Resumen copiado al portapapeles', 'ok'); }
+    catch { toast('No se pudo copiar el resumen', 'err'); }
+  });
 }
 
 function exportarEstadoCuentaCSV() {
