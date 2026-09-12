@@ -183,6 +183,10 @@ tr.fila-prov:hover td{background:var(--cafe-xs);cursor:pointer}
 tr.vencido td{background:rgba(155,38,38,.025)}
 tr.vencido td.td-prov{color:var(--rojo)}
 
+/* Tabla de Facturas: filas más compactas (mismo ancho de columnas, solo menos aire) */
+#tablaFacturas th{padding:7px 10px}
+#tablaFacturas td{padding:6px 10px}
+
 /* ── SORT HEADERS ── */
 .th-sort{cursor:pointer;user-select:none;transition:color .15s}
 .th-sort:hover{color:var(--cafe)}
@@ -829,7 +833,7 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
       <div class="tabla-scroll">
         <table id="tablaFacturas">
           <thead><tr>
-            <th style="width:2.2%;padding:11px 4px 11px 10px" title="Prioridad"></th>
+            <th style="width:2.2%;padding:7px 4px 7px 10px" title="Prioridad"></th>
             <th class="th-sort" style="width:4%" data-col="folio">Folio <span class="s-ic"></span></th>
             <th class="th-sort" style="width:14%" data-col="proveedor">Proveedor <span class="s-ic"></span></th>
             <th class="th-sort" style="width:7%" data-col="no_factura">Factura <span class="s-ic"></span></th>
@@ -2418,6 +2422,12 @@ function fechaLargaEQ(iso) {
   return new Date(iso+'T12:00:00').toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
 }
 
+// "PAGO 5611 BNRT USD" — antepone la palabra PAGO a la cuenta/nota del abono.
+function referenciaPagoEQ(referencia) {
+  const ref = (referencia||'').toString().trim();
+  return ref && ref !== '—' ? `PAGO ${ref}` : 'PAGO';
+}
+
 // Piezas compartidas entre la vista en pantalla y el PDF: encabezado, recuadro
 // de proveedor y filas de la tabla (facturas + pagos).
 function partesEstadoCuenta(d) {
@@ -2458,8 +2468,8 @@ function partesEstadoCuenta(d) {
   const filasPago = d.pagos.map(p=>`
     <tr class="eq-pago eq-row" data-tipo="pago">
       <td>${fmtDate(p.fecha)}</td>
-      <td>Pago</td>
-      <td>${(p.referencia||'—').toString().replace(/</g,'&lt;')}</td>
+      <td>${(p.factura||'—').toString().replace(/</g,'&lt;')}</td>
+      <td>${referenciaPagoEQ(p.referencia).toString().replace(/</g,'&lt;')}</td>
       <td class="r mono">-${fmt(Math.abs(p.importe))}</td>
     </tr>`).join('');
 
@@ -2588,7 +2598,7 @@ function exportarEstadoCuentaCSV() {
     ['Fecha','Factura','Referencia','Importe'],
   ];
   d.facturas.forEach(r=>filas.push([r.fecha_factura, r.no_factura||'', r.servicio||r.area_evento||'', (parseFloat(r.total_mn)||0).toFixed(2)]));
-  d.pagos.forEach(p=>filas.push([p.fecha||'', 'Pago', p.referencia||'', p.importe.toFixed(2)]));
+  d.pagos.forEach(p=>filas.push([p.fecha||'', p.factura||'', referenciaPagoEQ(p.referencia), p.importe.toFixed(2)]));
   filas.push(['','','Facturas total', d.totalFacturas.toFixed(2)]);
   filas.push(['','','Pagos totales', d.totalPagos.toFixed(2)]);
   filas.push(['','','Saldo actual', d.saldo.toFixed(2)]);
