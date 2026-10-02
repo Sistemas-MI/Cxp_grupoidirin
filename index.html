@@ -561,9 +561,9 @@ tr.prioritaria .td-prov b{ color:var(--cafe); }
 .pp-tabla-wrap{padding:0 22px}
 .pp-tabla-wrap table{width:100%;border-collapse:collapse}
 .pp-tabla-wrap thead tr{background:var(--crema-dark)}
-.pp-tabla-wrap th{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--suave);padding:8px 10px;text-align:left;font-weight:400;border-bottom:1px solid var(--linea);white-space:nowrap}
+.pp-tabla-wrap th{font-size:7.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--suave);padding:7px 6px;text-align:left;font-weight:400;border-bottom:1px solid var(--linea);white-space:nowrap}
 .pp-tabla-wrap th.r{text-align:right}
-.pp-tabla-wrap td{font-size:11px;padding:10px 10px;border-bottom:1px solid var(--linea);color:var(--texto);vertical-align:top;line-height:1.4}
+.pp-tabla-wrap td{font-size:10px;padding:7px 6px;border-bottom:1px solid var(--linea);color:var(--texto);vertical-align:top;line-height:1.35}
 .pp-tabla-wrap td.r{text-align:right;font-variant-numeric:tabular-nums}
 .pp-tabla-wrap tr.pp-total td{background:var(--crema-dark);font-weight:600;border-bottom:none;padding-top:11px;padding-bottom:11px;vertical-align:middle}
 .pp-tabla-wrap tr.pp-total td.r{font-family:'EB Garamond',serif;font-size:15px}
@@ -3560,14 +3560,15 @@ function generarPDFFacturasFiltradas() {
     const saldo   = saldoDeReg(r);
     return `<tr>
       <td style="color:var(--suave);white-space:nowrap">${esc(r.folio)||'—'}</td>
-      <td style="white-space:nowrap"><b>${esc(r.proveedor)||'—'}</b></td>
+      <td style="max-width:120px"><b>${esc(r.proveedor)||'—'}</b></td>
       <td style="color:var(--suave);white-space:nowrap">${esc(r.no_factura)||'—'}</td>
       <td style="color:var(--suave);white-space:nowrap">${fmtDate(r.fecha_factura)}</td>
       <td class="r mono" style="white-space:nowrap">${fmt(parseFloat(r.total_mn)||0)}</td>
       <td class="r mono" style="white-space:nowrap">${fmt(saldo)}</td>
       <td style="text-align:center"><span style="background:var(--dorado-xs);padding:2px 7px;border-radius:2px;font-size:8.5px;letter-spacing:.05em">${esc(r.usd)||'MXN'}</span></td>
       <td class="r mono" style="white-space:nowrap">${(r.usd==='USD'&&r.total_usd!=null)?('US$'+parseFloat(r.total_usd).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})):'—'}</td>
-      <td style="color:var(--suave);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.servicio)||'—'}</td>
+      <td style="color:var(--suave);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.servicio)||'—'}</td>
+      <td style="color:var(--suave);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.area_evento)||'—'}</td>
       <td style="white-space:nowrap">${fmtDate(r.fecha_vencimiento)}</td>
       <td style="color:var(--suave);white-space:nowrap">${fmtDate(r.fecha_pago)}</td>
       <td style="white-space:nowrap"><span class="badge ${bCls}">${bTxt}</span></td>
@@ -3604,11 +3605,11 @@ function generarPDFFacturasFiltradas() {
     <div class="pp-tabla-wrap">
       <table>
         <thead><tr>
-          <th>Folio</th><th>Proveedor</th><th>Factura</th><th>F. Factura</th><th class="r">Importe</th><th class="r">Saldo</th><th style="text-align:center">Moneda</th><th class="r">Monto USD</th><th>Servicio</th><th>Vence</th><th>F. Pago</th><th>Status</th><th>Solicita</th><th>Empresa</th>
+          <th>Folio</th><th>Proveedor</th><th>Factura</th><th>F. Factura</th><th class="r">Importe</th><th class="r">Saldo</th><th style="text-align:center">Moneda</th><th class="r">Monto USD</th><th>Servicio</th><th>Área/Evento</th><th>Vence</th><th>F. Pago</th><th>Status</th><th>Solicita</th><th>Empresa</th>
         </tr></thead>
         <tbody>
           ${filas}
-          <tr class="pp-total"><td colspan="4">Total MXN (MXN)</td><td></td><td class="r">${fmt(totalMxn)}</td><td></td><td class="r">${totalUsd>0?`<div class="usd-cell-lbl">Total USD</div><div class="usd-cell-val">US$${totalUsd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>`:''}</td><td colspan="6"></td></tr>
+          <tr class="pp-total"><td colspan="4">Total MXN (MXN)</td><td></td><td class="r">${fmt(totalMxn)}</td><td></td><td class="r">${totalUsd>0?`<div class="usd-cell-lbl">Total USD</div><div class="usd-cell-val">US$${totalUsd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>`:''}</td><td colspan="7"></td></tr>
         </tbody>
       </table>
     </div>
@@ -3967,7 +3968,7 @@ function generarPDFPrioridad(fechaReporte) {
       const abonado = abonadoDeReg(r);
       const saldo   = saldoDeReg(r);
       return `<tr>
-        <td style="white-space:nowrap"><b>${r.proveedor||'—'}</b></td>
+        <td style="min-width:150px;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><b>${r.proveedor||'—'}</b></td>
         <td style="color:var(--suave);white-space:nowrap">${r.no_factura||'—'}</td>
         <td><span style="background:var(--cafe-xs);padding:2px 7px;border-radius:2px;font-size:8.5px;letter-spacing:.05em">${EMPRESAS[r.empresa]?.short||r.empresa||'—'}</span></td>
         <td style="color:var(--suave);white-space:nowrap">${fmtDate(r.fecha_factura)}</td>
@@ -3976,11 +3977,10 @@ function generarPDFPrioridad(fechaReporte) {
         <td class="r mono" style="white-space:nowrap">${fmt(saldo)}${abonado>0?`<br><span style="font-size:8.5px;color:#8a6a18;font-weight:600">abonado ${fmt(abonado)}</span>`:''}</td>
         <td style="text-align:center"><span style="background:var(--dorado-xs);padding:2px 7px;border-radius:2px;font-size:8.5px;letter-spacing:.05em">${r.usd||'MXN'}</span></td>
         <td class="r mono" style="white-space:nowrap">${(r.usd==='USD'&&r.total_usd!=null)?('US$'+parseFloat(r.total_usd).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})):'—'}</td>
-        <td style="color:var(--suave);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.servicio||'—'}</td>
+        <td style="color:var(--suave);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.servicio||'—'}</td>
+        <td style="color:var(--suave);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.area_evento||'—'}</td>
         <td style="white-space:nowrap"><span class="badge ${bCls}">${bTxt}</span></td>
         <td style="color:var(--suave);white-space:nowrap">${r.solicita||r.periodo_gasto||'—'}</td>
-        <td style="color:var(--suave);white-space:nowrap">${r.cta_pago||'—'}</td>
-        <td style="color:var(--suave);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.obs||'—'}</td>
       </tr>`;
     }).join('');
 
@@ -4016,11 +4016,11 @@ function generarPDFPrioridad(fechaReporte) {
       <div class="pp-tabla-wrap">
         <table>
           <thead><tr>
-            <th>Proveedor</th><th>No. Factura</th><th>Empresa</th><th>F. Factura</th><th>Vencimiento</th><th class="r">Días</th><th class="r">Saldo</th><th style="text-align:center">Moneda</th><th class="r">Monto USD</th><th>Servicio</th><th>Status</th><th>Solicita</th><th>Cta. Pago</th><th>Obs.</th>
+            <th style="width:17%">Proveedor</th><th>No. Factura</th><th>Empresa</th><th>F. Factura</th><th>Vencimiento</th><th class="r">Días</th><th class="r">Saldo</th><th style="text-align:center">Moneda</th><th class="r">Monto USD</th><th>Servicio</th><th>Área/Evento</th><th>Status</th><th>Solicita</th>
           </tr></thead>
           <tbody>
             ${filas}
-            <tr class="pp-total"><td colspan="6">Total general</td><td class="r">${fmt(acumulado)}</td><td></td><td class="r">${totalUsd>0?`<div class="usd-cell-lbl">Total USD</div><div class="usd-cell-val">US$${totalUsd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>`:''}</td><td colspan="5"></td></tr>
+            <tr class="pp-total"><td colspan="6">Total general</td><td class="r">${fmt(acumulado)}</td><td></td><td class="r">${totalUsd>0?`<div class="usd-cell-lbl">Total USD</div><div class="usd-cell-val">US$${totalUsd.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>`:''}</td><td colspan="4"></td></tr>
           </tbody>
         </table>
       </div>
