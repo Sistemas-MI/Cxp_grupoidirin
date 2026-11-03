@@ -238,22 +238,34 @@ tr.vencido td.td-prov{color:var(--rojo)}
 .pc-total{font-family:'EB Garamond',serif;font-size:14px;color:var(--rojo);flex:0 0 auto;min-width:88px;text-align:right;white-space:nowrap}
 
 /* ── ANTIGÜEDAD ── */
-.antig-grid{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px}
-.antig-card{flex:1 1 140px;min-width:0;background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:16px 12px;text-align:center;box-shadow:var(--sh)}
+.antig-grid{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.antig-card{position:relative;overflow:hidden;flex:1 1 140px;min-width:0;border-radius:var(--r);padding:16px 14px 14px;color:var(--crema);box-shadow:0 10px 24px rgba(44,26,16,.15);cursor:pointer;transition:.2s}
+.antig-card::after{content:"";position:absolute;right:-16px;bottom:-16px;width:76px;height:76px;border-radius:50%;background:rgba(255,255,255,.1);pointer-events:none}
+.antig-card:hover{transform:translateY(-2px)}
 @media(max-width:760px){.antig-card{flex:1 1 30%}}
 @media(max-width:500px){.antig-card{flex:1 1 45%}}
-.an-rango{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--suave);margin-bottom:6px;white-space:nowrap}
-.an-monto{font-family:'EB Garamond',serif;font-size:17px;font-weight:500;line-height:1.1}
-.an-count{font-size:9px;color:var(--suave);margin-top:3px}
-.antig-card.urgente{border-top:3px solid var(--rojo)}.antig-card.urgente .an-monto{color:var(--rojo)}
-.antig-card.medio{border-top:3px solid var(--dorado)}.antig-card.medio .an-monto{color:#8a6a18}
-.antig-card.normal{border-top:3px solid var(--cafe)}.antig-card.normal .an-monto{color:var(--cafe)}
-.antig-card.corriente{border-top:3px solid var(--suave)}
-.antig-card.seleccionada{box-shadow:0 0 0 2px currentColor,var(--sh);opacity:1}
+.an-ico{position:relative;z-index:1;width:24px;height:24px;border-radius:7px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:11px;margin-bottom:10px}
+.an-rango{position:relative;z-index:1;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:rgba(245,240,232,.78);margin-bottom:7px;white-space:nowrap}
+.an-monto{position:relative;z-index:1;font-family:'EB Garamond',serif;font-size:18px;font-weight:600;line-height:1.1;color:var(--crema)}
+.an-count{position:relative;z-index:1;font-size:8.5px;color:rgba(245,240,232,.62);margin-top:4px}
+.antig-card.t1{background:linear-gradient(145deg,#8C7060,#5C4A3E)}
+.antig-card.t2{background:linear-gradient(145deg,#9A8370,#6B5544)}
+.antig-card.t3{background:linear-gradient(145deg,#C79A49,#9A7430)}
+.antig-card.t4{background:linear-gradient(145deg,#C0802E,#9A5E1C)}
+.antig-card.t5{background:linear-gradient(145deg,#C0392B,#7A1E14)}
+.antig-card.seleccionada{transform:translateY(-2px);box-shadow:0 14px 30px rgba(44,26,16,.32)}
 .antig-card:not(.seleccionada){opacity:.85}
-.antig-card.urgente.seleccionada{box-shadow:0 0 0 2px var(--rojo),var(--sh)}
-.antig-card.normal.seleccionada{box-shadow:0 0 0 2px var(--cafe),var(--sh)}
-.antig-card.corriente.seleccionada{box-shadow:0 0 0 2px var(--suave),var(--sh)}
+
+/* ── Distribución del saldo vencido ── */
+.dist-card{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:20px 22px;box-shadow:var(--sh);margin-bottom:22px}
+.dist-title{font-family:'EB Garamond',serif;font-size:15px;color:var(--texto);margin-bottom:4px}
+.dist-sub{font-size:10px;color:var(--suave);margin-bottom:16px}
+.dist-track{display:flex;height:24px;border-radius:12px;overflow:hidden}
+.dist-seg{display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:700;transition:width .6s cubic-bezier(.4,0,.2,1);min-width:0;white-space:nowrap;overflow:hidden}
+.dist-legend{display:flex;flex-wrap:wrap;gap:20px;margin-top:14px}
+.dist-leg-item{font-size:9.5px;color:var(--suave)}
+.dist-leg-item b{font-family:'EB Garamond',serif;font-size:12.5px;color:var(--texto);display:block;margin-top:2px;font-weight:600}
+.dist-dot{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:5px}
 .th-sort-antig{cursor:pointer;user-select:none;transition:color .15s}
 .th-sort-antig:hover{color:var(--cafe)}
 .th-sort-antig.sort-asc,.th-sort-antig.sort-desc{color:var(--cafe)}
@@ -969,12 +981,20 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
   <section id="tab-antiguedad" style="display:none">
     <p class="sec-label">Cartera vencida por antigüedad</p>
     <div class="antig-grid">
-      <div class="antig-card corriente" id="ac-7"  data-rango="7"  style="cursor:pointer"><div class="an-rango">1–7 días</div><div class="an-monto" id="a7">—</div><div class="an-count" id="a7c">—</div></div>
-      <div class="antig-card corriente" id="ac-15" data-rango="15" style="cursor:pointer"><div class="an-rango">8–15 días</div><div class="an-monto" id="a15">—</div><div class="an-count" id="a15c">—</div></div>
-      <div class="antig-card normal"    id="ac-30" data-rango="30" style="cursor:pointer"><div class="an-rango">16–30 días</div><div class="an-monto" id="a30">—</div><div class="an-count" id="a30c">—</div></div>
-      <div class="antig-card normal"    id="ac-60" data-rango="60" style="cursor:pointer"><div class="an-rango">31–60 días</div><div class="an-monto" id="a60">—</div><div class="an-count" id="a60c">—</div></div>
-      <div class="antig-card urgente"   id="ac-120" data-rango="120" style="cursor:pointer"><div class="an-rango">60–120 días</div><div class="an-monto" id="a120">—</div><div class="an-count" id="a120c">—</div></div>
+      <div class="antig-card t1" id="ac-7"  data-rango="7"><div class="an-ico">●</div><div class="an-rango">1–7 días</div><div class="an-monto" id="a7">—</div><div class="an-count" id="a7c">—</div></div>
+      <div class="antig-card t2" id="ac-15" data-rango="15"><div class="an-ico">●</div><div class="an-rango">8–15 días</div><div class="an-monto" id="a15">—</div><div class="an-count" id="a15c">—</div></div>
+      <div class="antig-card t3" id="ac-30" data-rango="30"><div class="an-ico">◐</div><div class="an-rango">16–30 días</div><div class="an-monto" id="a30">—</div><div class="an-count" id="a30c">—</div></div>
+      <div class="antig-card t4" id="ac-60" data-rango="60"><div class="an-ico">◑</div><div class="an-rango">31–60 días</div><div class="an-monto" id="a60">—</div><div class="an-count" id="a60c">—</div></div>
+      <div class="antig-card t5" id="ac-120" data-rango="120"><div class="an-ico">⚠</div><div class="an-rango">60–120 días</div><div class="an-monto" id="a120">—</div><div class="an-count" id="a120c">—</div></div>
     </div>
+
+    <div class="dist-card">
+      <div class="dist-title">Distribución del saldo vencido</div>
+      <div class="dist-sub">Qué tan concentrada está la deuda por antigüedad — entre más a la derecha, mayor riesgo.</div>
+      <div class="dist-track" id="distTrack"></div>
+      <div class="dist-legend" id="distLegend"></div>
+    </div>
+
     <p class="sec-label" id="vencidasLabel" style="margin-top:4px">Facturas vencidas — detalle</p>
     <div class="tabla-wrap">
       <div class="tabla-scroll">
@@ -2244,10 +2264,27 @@ function renderAntiguedad() {
     else r120.push(r);
   });
   const sum=arr=>arr.reduce((s,r)=>s+saldoDeReg(r),0);
-  [['a7',r7],['a15',r15],['a30',r30],['a60',r60],['a120',r120]].forEach(([id,arr])=>{
+  const buckets = [['a7',r7,'1–7 días','#5C4A3E'],['a15',r15,'8–15 días','#6B5544'],['a30',r30,'16–30 días','#9A7430'],['a60',r60,'31–60 días','#9A5E1C'],['a120',r120,'60–120 días','#7A1E14']];
+  buckets.forEach(([id,arr])=>{
     $(id).textContent=fmt(sum(arr));
     $(id+'c').textContent=arr.length+' factura'+(arr.length!==1?'s':'');
   });
+
+  // Distribución del saldo vencido: % de cada rango sobre el total vencido.
+  const totalVenc = sum(vencidas);
+  if (totalVenc > 0) {
+    $('distTrack').innerHTML = buckets.map(([id,arr,label,color])=>{
+      const monto = sum(arr);
+      const pct = Math.round((monto/totalVenc)*100);
+      return pct>0 ? `<div class="dist-seg" style="width:${pct}%;background:${color}">${pct>=6?pct+'%':''}</div>` : '';
+    }).join('');
+    $('distLegend').innerHTML = buckets.map(([id,arr,label,color])=>
+      `<div class="dist-leg-item"><span class="dist-dot" style="background:${color}"></span>${label}<b>${fmt(sum(arr))}</b></div>`
+    ).join('');
+  } else {
+    $('distTrack').innerHTML = `<div class="dist-seg" style="width:100%;background:var(--crema-dark);color:var(--suave)">Sin saldo vencido</div>`;
+    $('distLegend').innerHTML = '';
+  }
 
   // Resaltar la card activa y desaturar las demás
   document.querySelectorAll('.antig-card').forEach(c=>{
