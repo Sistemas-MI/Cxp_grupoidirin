@@ -282,6 +282,23 @@ tr.vencido td.td-prov{color:var(--rojo)}
 .chart-emp-total{text-align:right;min-width:72px}
 .chart-emp-total-val{font-family:'EB Garamond',serif;font-size:12.5px;font-weight:600;color:var(--texto)}
 .chart-emp-total-pct{font-size:8px;color:var(--suave)}
+
+/* ── Estadísticas por empresa con dona (solo vista en pantalla) ── */
+.emp-cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:14px}
+.emp-stat-card{background:#fff;border:1px solid var(--linea);border-top:3px solid var(--cafe);border-radius:var(--r);box-shadow:var(--sh);padding:18px 18px 16px;display:flex;gap:16px;align-items:center;transition:.2s}
+.emp-stat-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg)}
+.emp-stat-card.liquidado{border-top-color:var(--verde)}
+.emp-donut-wrap{flex:0 0 auto;position:relative}
+.emp-stat-body{flex:1;min-width:0}
+.emp-stat-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid var(--linea)}
+.emp-stat-nombre{font-size:12.5px;font-weight:600;color:var(--texto);letter-spacing:.01em}
+.emp-stat-badge{font-size:8px;color:var(--suave);white-space:nowrap}
+.emp-stat-row{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:var(--suave);padding:2.5px 0}
+.emp-stat-row b{font-family:'EB Garamond',serif;font-size:13px;font-weight:600;color:var(--texto)}
+.emp-stat-row.verde b{color:var(--verde)}
+.emp-stat-row.rojo b{color:var(--rojo)}
+.emp-stat-row.usd b{color:#8a6a18}
+.emp-stat-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px}
 .chart-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
 .chart-row:last-child{margin-bottom:0}
 .chart-lbl{font-size:9px;color:var(--suave);letter-spacing:.06em;min-width:88px;text-align:right}
@@ -2312,6 +2329,24 @@ function svgAreaChartPagos(entries) {
   </svg>`;
 }
 
+// Dona SVG (pagado/pendiente) para las tarjetas de "Estadísticas por empresa" (solo pantalla).
+function svgDonutEmpresa(pct, uid, size=78) {
+  const r = size/2 - 8.5, cx = size/2, cy = size/2;
+  const c = 2*Math.PI*r;
+  const dash = Math.max(0, Math.min(100,pct))/100 * c;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <defs><linearGradient id="gradDonut${uid}" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2D6A4F"/><stop offset="100%" stop-color="#4C9372"/>
+    </linearGradient></defs>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#EDE7D8" stroke-width="8.5"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="url(#gradDonut${uid})" stroke-width="8.5"
+      stroke-dasharray="${dash.toFixed(1)} ${(c-dash).toFixed(1)}" stroke-linecap="round"
+      transform="rotate(-90 ${cx} ${cy})" style="transition:stroke-dasharray .7s cubic-bezier(.4,0,.2,1)"/>
+    <text x="${cx}" y="${cy-1}" text-anchor="middle" font-family="'EB Garamond',serif" font-size="${(size*0.23).toFixed(0)}" font-weight="600" fill="#2C1A10">${Math.round(pct)}%</text>
+    <text x="${cx}" y="${cy+size*0.165}" text-anchor="middle" font-family="Inter,sans-serif" font-size="${(size*0.1).toFixed(0)}" fill="#8C7060" letter-spacing=".04em">PAGADO</text>
+  </svg>`;
+}
+
 // ═══════════════════════════════════════════════════════
 //  REPORTES
 // ═══════════════════════════════════════════════════════
@@ -2376,31 +2411,36 @@ function renderReportes() {
     document.querySelectorAll('#chartEmpresas .chart-emp-seg').forEach(b=>{ b.style.width = b.getAttribute('data-pct') + '%'; });
   }));
 
-  $('reporteEmpresas').innerHTML=Object.entries(EMPRESAS).map(([key,info])=>{
+  const tarjetasEmp = Object.entries(EMPRESAS).map(([key,info])=>{
     const er=regsBase().filter(r=>r.empresa===key);
     if (!er.length) return '';
     const total=er.reduce((s,r)=>s+(parseFloat(r.total_mn)||0),0);
-    const pagE=er.filter(r=>r.status==='pagada').reduce((s,r)=>s+(parseFloat(r.total_mn)||0),0);
-    const pendE=total-pagE;
+    const pagE=er.reduce((s,r)=>s + (r.status==='pagada' ? (parseFloat(r.total_mn)||0) : abonadoDeReg(r)), 0);
+    const pendE=Math.max(total-pagE,0);
     const pct=total>0?Math.round((pagE/total)*100):0;
-    return `<div class="kpi-card" style="margin-bottom:10px;padding:16px 18px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div class="k-label" style="font-size:10px;letter-spacing:.12em">${info.nombre}</div>
-        <div style="font-size:9px;color:var(--suave)">${er.length} reg. · ${pct}% liquidado</div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
-        <div><div style="font-size:8px;color:var(--suave);letter-spacing:.1em;margin-bottom:2px">TOTAL</div><div class="k-val">${fmtK(total)}</div></div>
-        <div><div style="font-size:8px;color:var(--suave);letter-spacing:.1em;margin-bottom:2px">PAGADO</div><div class="k-val" style="color:var(--verde)">${fmtK(pagE)}</div></div>
-        <div><div style="font-size:8px;color:var(--suave);letter-spacing:.1em;margin-bottom:2px">PENDIENTE</div><div class="k-val" style="color:var(--rojo)">${fmtK(pendE)}</div></div>
-      </div>
-      <div style="margin-top:10px;background:var(--crema-dark);border-radius:2px;height:5px;overflow:hidden">
-        <div class="eq-anim-bar" data-pct="${pct}" style="height:100%;background:var(--verde);border-radius:2px;width:0;transition:width .6s cubic-bezier(.4,0,.2,1)"></div>
+
+    const usdE = er.filter(r=>r.usd==='USD' && r.total_usd!=null);
+    const totalUsdE = usdE.reduce((s,r)=>{
+      const tc = parseFloat(r.tipo_cambio) || 0;
+      const abonadoUsd = tc>0 ? abonadoDeReg(r)/tc : 0;
+      return s + (r.status==='pagada' ? (parseFloat(r.total_usd)||0) : Math.max(parseFloat(r.total_usd) - abonadoUsd, 0));
+    }, 0);
+
+    return `<div class="emp-stat-card${pct>=100?' liquidado':''}">
+      <div class="emp-donut-wrap">${svgDonutEmpresa(pct, key)}</div>
+      <div class="emp-stat-body">
+        <div class="emp-stat-top">
+          <span class="emp-stat-nombre">${info.nombre}</span>
+          <span class="emp-stat-badge">${er.length} reg.</span>
+        </div>
+        <div class="emp-stat-row"><span><span class="emp-stat-dot" style="background:var(--cafe)"></span>Total</span><b>${fmtK(total)}</b></div>
+        <div class="emp-stat-row verde"><span><span class="emp-stat-dot" style="background:var(--verde)"></span>Pagado</span><b>${fmtK(pagE)}</b></div>
+        <div class="emp-stat-row rojo"><span><span class="emp-stat-dot" style="background:var(--rojo)"></span>Pendiente</span><b>${fmtK(pendE)}</b></div>
+        ${totalUsdE>0?`<div class="emp-stat-row usd"><span><span class="emp-stat-dot" style="background:var(--dorado)"></span>En USD</span><b>US$${totalUsdE.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</b></div>`:''}
       </div>
     </div>`;
   }).join('');
-  requestAnimationFrame(()=> requestAnimationFrame(()=>{
-    document.querySelectorAll('#reporteEmpresas .eq-anim-bar').forEach(b=>{ b.style.width = b.getAttribute('data-pct') + '%'; });
-  }));
+  $('reporteEmpresas').innerHTML = `<div class="emp-cards-grid">${tarjetasEmp}</div>`;
 }
 
 // ═══════════════════════════════════════════════════════
