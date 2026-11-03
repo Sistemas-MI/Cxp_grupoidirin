@@ -68,15 +68,17 @@ header h1 em{font-style:italic;color:var(--dorado)}
 .kpi-strip{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
 .kpi-strip .kpi-card{flex:1 1 0;min-width:140px}
 @media(max-width:680px){.kpi-strip .kpi-card{flex:1 1 45%}}
-.kpi-card{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:16px 14px 14px;box-shadow:var(--sh)}
-.kpi-card .k-label{font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:var(--suave);margin-bottom:6px}
-.kpi-card .k-val{font-family:'EB Garamond',serif;font-size:clamp(15px,2.2vw,22px);font-weight:500;line-height:1.1}
-.kpi-card .k-sub{font-size:9px;color:var(--suave);margin-top:3px;font-weight:300;font-style:italic}
-.kpi-card.k-acum{border-top:3px solid var(--suave)}
-.kpi-card.k-pagar{border-top:3px solid var(--rojo)}.kpi-card.k-pagar .k-val{color:var(--rojo)}
-.kpi-card.k-pago{border-top:3px solid var(--verde)}.kpi-card.k-pago .k-val{color:var(--verde)}
-.kpi-card.k-venc{border-top:3px solid var(--dorado)}.kpi-card.k-venc .k-val{color:#8a6a18}
-.kpi-card.k-cnt{border-top:3px solid var(--cafe)}.kpi-card.k-cnt .k-val{color:var(--cafe)}
+.kpi-card{position:relative;overflow:hidden;border-radius:var(--r);padding:17px 16px 15px;box-shadow:0 10px 24px rgba(44,26,16,.15);color:var(--crema)}
+.kpi-card::after{content:"";position:absolute;right:-16px;bottom:-16px;width:76px;height:76px;border-radius:50%;background:rgba(255,255,255,.1);pointer-events:none}
+.kpi-card .k-ico{position:relative;z-index:1;width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:12px;margin-bottom:11px}
+.kpi-card .k-label{position:relative;z-index:1;font-size:8px;letter-spacing:.15em;text-transform:uppercase;color:rgba(245,240,232,.78);margin-bottom:6px}
+.kpi-card .k-val{position:relative;z-index:1;font-family:'EB Garamond',serif;font-size:clamp(15px,2.2vw,21px);font-weight:600;line-height:1.1;color:var(--crema)}
+.kpi-card .k-sub{position:relative;z-index:1;font-size:8.5px;color:rgba(245,240,232,.62);margin-top:4px;font-weight:400;font-style:normal}
+.kpi-card.k-acum{background:linear-gradient(145deg,#7A4530,#4A2415)}
+.kpi-card.k-pagar{background:linear-gradient(145deg,#C0392B,#8E2217)}
+.kpi-card.k-pago{background:linear-gradient(145deg,#357A5B,#1F4D39)}
+.kpi-card.k-venc{background:linear-gradient(145deg,#C79A49,#9A7430)}
+.kpi-card.k-cnt{background:linear-gradient(145deg,#8C7060,#5C4A3E)}
 
 /* ── ALERTA VENCIDOS ── */
 .alerta-box{background:var(--rojo-xs);border:1px solid var(--rojo-sm);border-left:3px solid var(--rojo);border-radius:var(--r);padding:14px 18px;margin-bottom:18px;display:flex;align-items:flex-start;gap:14px}
@@ -108,26 +110,24 @@ header h1 em{font-style:italic;color:var(--dorado)}
 .pv-empty{flex:1 1 auto;width:100%;padding:8px 4px;font-size:11px;color:var(--suave);font-style:italic;text-align:center}
 
 /* ── EMPRESA BIG CARD ── */
-.empresa-hero{background:var(--cafe);color:var(--crema);border-radius:var(--r);padding:22px 22px 18px;margin-bottom:18px;box-shadow:var(--sh)}
-.eh-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px;flex-wrap:wrap}
+.empresa-hero{position:relative;overflow:hidden;background:linear-gradient(120deg,#4A2415 0%,var(--cafe) 42%,var(--cafe-l) 100%);color:var(--crema);border-radius:var(--r);padding:24px 26px 20px;margin-bottom:18px;box-shadow:0 14px 36px rgba(44,26,16,.24)}
+.empresa-hero::after{content:"";position:absolute;top:-110px;right:-70px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(184,149,74,.32),transparent 70%);pointer-events:none}
+.eh-top{position:relative;z-index:1;display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:10px;flex-wrap:wrap}
 .eh-nombre{font-family:'EB Garamond',serif;font-size:22px;font-style:italic;color:var(--dorado)}
-.eh-anyo{font-size:8px;letter-spacing:.16em;text-transform:uppercase;background:rgba(245,240,232,.08);border:1px solid rgba(184,149,74,.2);border-radius:2px;padding:4px 10px;color:rgba(245,240,232,.5)}
-.eh-grid{display:flex;gap:16px;flex-wrap:wrap}
-.eh-grid .eh-item{flex:1 1 0;min-width:110px}
-@media(max-width:500px){.eh-grid .eh-item{flex:1 1 45%}}
-.eh-item .eh-lbl{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:rgba(245,240,232,.38);margin-bottom:3px}
-.eh-item .eh-val{font-family:'EB Garamond',serif;font-size:19px;color:var(--crema)}
+.eh-anyo{font-size:8px;letter-spacing:.16em;text-transform:uppercase;color:rgba(245,240,232,.45);margin-top:4px}
+.eh-pct-chip{display:flex;align-items:center;gap:10px;background:rgba(245,240,232,.08);border:1px solid rgba(184,149,74,.25);border-radius:30px;padding:7px 16px 7px 8px}
+.eh-pct-val{font-family:'EB Garamond',serif;font-size:18px;font-weight:600;color:var(--crema)}
+.eh-pct-lbl{font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:rgba(245,240,232,.55);line-height:1.3}
+.eh-grid{position:relative;z-index:1;display:flex;gap:16px;flex-wrap:wrap}
+.eh-grid .eh-item{flex:1 1 0;min-width:110px;padding-left:16px;border-left:1px solid rgba(245,240,232,.14)}
+.eh-grid .eh-item:first-child{padding-left:0;border-left:none}
+@media(max-width:500px){.eh-grid .eh-item{flex:1 1 45%;border-left:none;padding-left:0}}
+.eh-item .eh-lbl{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:rgba(245,240,232,.5);margin-bottom:4px}
+.eh-item .eh-val{font-family:'EB Garamond',serif;font-size:22px;font-weight:600;color:var(--crema)}
 .eh-item .eh-val.r{color:#f48989}.eh-item .eh-val.g{color:#81c784}.eh-item .eh-val.y{color:var(--dorado)}
 
 /* ── EMPRESA ROW LIST ── */
-.emp-row{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:14px 18px;margin-bottom:8px;cursor:pointer;transition:border-color .15s,box-shadow .15s;display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:18px;box-shadow:var(--sh)}
-@media(max-width:600px){.emp-row{grid-template-columns:1fr 1fr}}
-.emp-row:hover{border-color:var(--dorado);box-shadow:0 4px 18px rgba(44,26,16,.13)}
-.er-nombre{font-size:13px;font-weight:500}
-.er-chip .er-lbl{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--suave);margin-bottom:2px}
-.er-chip b{font-size:13px}
-.er-bar{width:100%;height:4px;background:var(--crema-dark);border-radius:2px;margin-top:6px;overflow:hidden}
-.er-bar-fill{height:100%;background:var(--verde);border-radius:2px;transition:width .5s}
+.emp-stat-card.clickable{cursor:pointer}
 
 /* ── TABLA ── */
 .tabla-wrap{background:#fff;border:1px solid var(--linea);border-radius:var(--r);overflow:hidden;margin-bottom:18px;box-shadow:var(--sh)}
@@ -768,8 +768,14 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
 
     <div class="empresa-hero" id="empresaHero">
       <div class="eh-top">
-        <div class="eh-nombre" id="ehNombre">Todas las empresas</div>
-        <div class="eh-anyo" id="ehAnyo">Todos los años</div>
+        <div>
+          <div class="eh-nombre" id="ehNombre">Todas las empresas</div>
+          <div class="eh-anyo" id="ehAnyo">Todos los años</div>
+        </div>
+        <div class="eh-pct-chip">
+          <div class="eh-pct-val" id="ehPct">—</div>
+          <div class="eh-pct-lbl">liquidado<br>del total</div>
+        </div>
       </div>
       <div class="eh-grid">
         <div class="eh-item"><div class="eh-lbl">Acumulado</div><div class="eh-val" id="ehAcum">—</div></div>
@@ -780,11 +786,11 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
     </div>
 
     <div class="kpi-strip">
-      <div class="kpi-card k-acum"><div class="k-label">Total acumulado</div><div class="k-val" id="kAcum">—</div><div class="k-sub">registrado</div></div>
-      <div class="kpi-card k-pagar"><div class="k-label">Por pagar</div><div class="k-val" id="kPagar">—</div><div class="k-sub">pendiente</div></div>
-      <div class="kpi-card k-pago"><div class="k-label">Ya pagado</div><div class="k-val" id="kPagado">—</div><div class="k-sub">liquidado</div></div>
-      <div class="kpi-card k-venc"><div class="k-label">Vencido</div><div class="k-val" id="kVencido">—</div><div class="k-sub">sin pagar</div></div>
-      <div class="kpi-card k-cnt"><div class="k-label">Facturas</div><div class="k-val" id="kCount">—</div><div class="k-sub">registros</div></div>
+      <div class="kpi-card k-acum"><div class="k-ico">◈</div><div class="k-label">Total acumulado</div><div class="k-val" id="kAcum">—</div><div class="k-sub">registrado</div></div>
+      <div class="kpi-card k-pagar"><div class="k-ico">◷</div><div class="k-label">Por pagar</div><div class="k-val" id="kPagar">—</div><div class="k-sub">pendiente</div></div>
+      <div class="kpi-card k-pago"><div class="k-ico">✓</div><div class="k-label">Ya pagado</div><div class="k-val" id="kPagado">—</div><div class="k-sub">liquidado</div></div>
+      <div class="kpi-card k-venc"><div class="k-ico">⚠</div><div class="k-label">Vencido</div><div class="k-val" id="kVencido">—</div><div class="k-sub">sin pagar</div></div>
+      <div class="kpi-card k-cnt"><div class="k-ico">▤</div><div class="k-label">Facturas</div><div class="k-val" id="kCount">—</div><div class="k-sub">registros</div></div>
     </div>
 
     <div class="alerta-box" id="alertaBox" style="display:none">
@@ -1759,6 +1765,7 @@ function renderResumen() {
   $('ehPag').textContent    = fmt(pag);
   $('ehPend').textContent   = fmt(pend);
   $('ehVenc').textContent   = venc>0 ? fmt(venc) : '$0';
+  $('ehPct').textContent    = (acum>0 ? Math.round((pag/acum)*100) : 0) + '%';
   $('kAcum').textContent    = fmt(acum);
   $('kPagar').textContent   = fmt(pend);
   $('kPagado').textContent  = fmt(pag);
@@ -1812,26 +1819,27 @@ function renderResumen() {
   // Lista por empresa
   const listEl = $('empresasList');
   if (empresaActual !== 'todas') { listEl.innerHTML=''; return; }
-  listEl.innerHTML = Object.entries(EMPRESAS).map(([key,info])=>{
+  const tarjetas = Object.entries(EMPRESAS).map(([key,info])=>{
     const er   = todosReg.filter(r=>r.empresa===key&&(anyoActual==='todos'||getAnyo(r)===parseInt(anyoActual)));
+    if (!er.length) return '';
     const acumE= er.reduce((s,r)=>s+(parseFloat(r.total_mn)||0),0);
     const pagE = er.reduce((s,r)=>s + (r.status==='pagada' ? (parseFloat(r.total_mn)||0) : abonadoDeReg(r)), 0);
-    const pendE= er.filter(r=>r.status!=='pagada').reduce((s,r)=>s+saldoDeReg(r),0);
+    const pendE= Math.max(acumE-pagE,0);
     const pct  = acumE>0?Math.round((pagE/acumE)*100):0;
-    return `<div class="emp-row" onclick="filtrarEmpresa('${key}')">
-      <div>
-        <div class="er-nombre">${info.nombre}</div>
-        <div class="er-bar"><div class="er-bar-fill" style="width:${pct}%"></div></div>
-        <div style="font-size:9px;color:var(--suave);margin-top:3px">${pct}% liquidado · ${er.length} reg.</div>
-      </div>
-      <div class="er-chip"><div class="er-lbl">Acumulado</div><b>${fmt(acumE)}</b></div>
-      <div class="er-chip"><div class="er-lbl">Pagado</div><b style="color:var(--verde)">${fmt(pagE)}</b></div>
-      <div class="er-chip">
-        <div class="er-lbl">Pendiente</div>
-        <b style="color:#8a6a18">${fmt(pendE)}</b>
+    return `<div class="emp-stat-card clickable${pct>=100?' liquidado':''}" onclick="filtrarEmpresa('${key}')">
+      <div class="emp-donut-wrap">${svgDonutEmpresa(pct, 'res-'+key)}</div>
+      <div class="emp-stat-body">
+        <div class="emp-stat-top">
+          <span class="emp-stat-nombre">${info.nombre}</span>
+          <span class="emp-stat-badge">${er.length} reg.</span>
+        </div>
+        <div class="emp-stat-row"><span><span class="emp-stat-dot" style="background:var(--cafe)"></span>Acumulado</span><b>${fmt(acumE)}</b></div>
+        <div class="emp-stat-row verde"><span><span class="emp-stat-dot" style="background:var(--verde)"></span>Pagado</span><b>${fmt(pagE)}</b></div>
+        <div class="emp-stat-row rojo"><span><span class="emp-stat-dot" style="background:var(--rojo)"></span>Pendiente</span><b>${fmt(pendE)}</b></div>
       </div>
     </div>`;
   }).join('');
+  listEl.innerHTML = `<div class="emp-cards-grid">${tarjetas}</div>`;
 }
 
 function filtrarEmpresa(key) {
