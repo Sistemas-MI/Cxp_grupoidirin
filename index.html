@@ -265,6 +265,23 @@ tr.vencido td.td-prov{color:var(--rojo)}
 /* ── CHART ── */
 .chart-card{background:#fff;border:1px solid var(--linea);border-radius:var(--r);padding:20px 20px 16px;margin-bottom:16px;box-shadow:var(--sh)}
 .chart-head{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--cafe);font-weight:500;margin-bottom:14px}
+/* ── Gráficas modernas de Reportes (solo vista en pantalla; el PDF usa su propio markup .rp-*) ── */
+.chart-modern{width:100%}
+.chart-legend{display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap}
+.chart-legend-item{display:flex;align-items:center;gap:5px;font-size:9px;color:var(--suave);letter-spacing:.04em}
+.chart-legend-dot{width:8px;height:8px;border-radius:2px;display:inline-block}
+.chart-area-tooltip{font-size:8.5px;font-weight:600;fill:var(--texto);font-family:'Inter',sans-serif}
+.chart-emp-rows{display:flex;flex-direction:column;gap:12px}
+.chart-emp-row{display:grid;grid-template-columns:52px 1fr auto;align-items:center;gap:10px}
+.chart-emp-code{font-size:10px;font-weight:600;color:var(--texto);letter-spacing:.03em}
+.chart-emp-track{position:relative;height:20px;background:var(--crema-dark);border-radius:10px;overflow:hidden;display:flex}
+.chart-emp-seg{height:100%;transition:width .6s cubic-bezier(.4,0,.2,1);display:flex;align-items:center}
+.chart-emp-seg.pagado{background:linear-gradient(90deg,#2D6A4F,#4C9372)}
+.chart-emp-seg.pendiente{background:linear-gradient(90deg,#B8954A,#D4AF6A)}
+.chart-emp-seg-lbl{font-size:8px;color:#fff;padding-left:7px;white-space:nowrap;font-weight:600}
+.chart-emp-total{text-align:right;min-width:72px}
+.chart-emp-total-val{font-family:'EB Garamond',serif;font-size:12.5px;font-weight:600;color:var(--texto)}
+.chart-emp-total-pct{font-size:8px;color:var(--suave)}
 .chart-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
 .chart-row:last-child{margin-bottom:0}
 .chart-lbl{font-size:9px;color:var(--suave);letter-spacing:.06em;min-width:88px;text-align:right}
@@ -987,7 +1004,7 @@ body.solo-lectura .modal-body textarea:disabled{opacity:.65;cursor:default;backg
         </div>
         <div>
           <div class="chart-card">
-            <div class="chart-head">Pendiente por empresa</div>
+            <div class="chart-head">Pagado vs. pendiente por empresa</div>
             <div id="chartEmpresas"></div>
           </div>
         </div>
@@ -2255,6 +2272,46 @@ function renderAntiguedad() {
     `<tr><td colspan="6"><div class="empty-state"><div class="es-ico">✅</div><p>Sin facturas vencidas${filtroAntig?' en este rango':''}${provTxt}.${(filtroAntig||proveedorAntig!=='todos')?' <span style="font-size:10px;color:var(--cafe);cursor:pointer" onclick="filtroAntig=null;proveedorAntig=\'todos\';$(\'proveedorAntigSelect\').value=\'todos\';renderAntiguedad()">Ver todas</span>':''}</p></div></td></tr>`;
 }
 
+// Gráfica de área con degradado para "Pagado por período" (solo vista en pantalla).
+function svgAreaChartPagos(entries) {
+  const w=560, h=190, padL=38, padR=12, padT=16, padB=24;
+  const plotW = w-padL-padR, plotH = h-padT-padB;
+  const n = entries.length || 1;
+  const vals = entries.map(e=>e[1]);
+  const maxV = Math.max(...vals, 1);
+  const stepX = n>1 ? plotW/(n-1) : 0;
+  const pts = entries.map((e,i)=>{
+    const x = padL + stepX*i;
+    const y = padT + plotH - (e[1]/maxV)*plotH;
+    return [x,y];
+  });
+  const base = (padT+plotH).toFixed(1);
+  const linePath = pts.length ? pts.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ') : '';
+  const areaPath = pts.length ? `${linePath} L${pts[pts.length-1][0].toFixed(1)},${base} L${pts[0][0].toFixed(1)},${base} Z` : '';
+  const grid = [0,.33,.66,1].map(f=>{
+    const y = padT + plotH - f*plotH;
+    return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${w-padR}" y2="${y.toFixed(1)}" stroke="#E0D8C8" stroke-width="1"/>
+            <text x="${padL-6}" y="${(y+3).toFixed(1)}" font-size="8" fill="#8C7060" text-anchor="end" font-family="Inter,sans-serif">${fmtK(maxV*f)}</text>`;
+  }).join('');
+  const dots = pts.map((p,i)=>{
+    const v = entries[i][1];
+    return `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="#fff" stroke="#2D6A4F" stroke-width="2"/>
+      ${v>0?`<text x="${p[0].toFixed(1)}" y="${(p[1]-9).toFixed(1)}" text-anchor="middle" class="chart-area-tooltip">${fmtK(v)}</text>`:''}`;
+  }).join('');
+  const xLabels = entries.map((e,i)=>`<text x="${pts[i][0].toFixed(1)}" y="${h-7}" text-anchor="middle" font-size="8" fill="#8C7060" font-family="Inter,sans-serif">${e[0]}</text>`).join('');
+  return `<svg class="chart-modern" viewBox="0 0 ${w} ${h}" style="overflow:visible">
+    <defs><linearGradient id="gradPagoVerde" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2D6A4F" stop-opacity="0.32"/>
+      <stop offset="100%" stop-color="#2D6A4F" stop-opacity="0"/>
+    </linearGradient></defs>
+    ${grid}
+    ${areaPath?`<path d="${areaPath}" fill="url(#gradPagoVerde)"/>`:''}
+    ${linePath?`<path d="${linePath}" fill="none" stroke="#2D6A4F" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`:''}
+    ${dots}
+    ${xLabels}
+  </svg>`;
+}
+
 // ═══════════════════════════════════════════════════════
 //  REPORTES
 // ═══════════════════════════════════════════════════════
@@ -2285,30 +2342,38 @@ function renderReportes() {
     if (grup[k]!==undefined) grup[k]+=parseFloat(r.total_mn)||0;
   });
 
-  const maxV=Math.max(...Object.values(grup),1);
-  $('chartBars').innerHTML=Object.entries(grup).map(([k,v])=>{
-    const pct=Math.max(4,Math.round((v/maxV)*100));
-    return `<div class="chart-row">
-      <div class="chart-lbl">${k}</div>
-      <div class="chart-bar-wrap"><div class="chart-bar verde" data-pct="${pct}" style="width:0">${v>0?`<span>${fmtK(v)}</span>`:''}</div></div>
-      <div class="chart-val">${v>0?fmtK(v):''}</div>
-    </div>`;
-  }).join('');
+  $('chartBars').innerHTML = svgAreaChartPagos(Object.entries(grup));
 
-  $('chartEmpresas').innerHTML=Object.entries(EMPRESAS).map(([key,info])=>{
-    const er=regsBase().filter(r=>r.empresa===key&&r.status!=='pagada');
-    const pendE=er.reduce((s,r)=>s+(parseFloat(r.total_mn)||0),0);
-    const allE=regsBase().filter(r=>r.empresa===key).reduce((s,r)=>s+(parseFloat(r.total_mn)||0),0);
-    const pct=allE>0?Math.max(4,Math.round((pendE/allE)*100)):4;
-    if (!allE) return '';
-    return `<div class="chart-row">
-      <div class="chart-lbl" style="min-width:96px">${info.short}</div>
-      <div class="chart-bar-wrap"><div class="chart-bar dorado" data-pct="${pct}" style="width:0">${pendE>0?`<span>${fmtK(pendE)}</span>`:''}</div></div>
-      <div class="chart-val">${fmtK(pendE)}</div>
+  // Pagado vs. Pendiente por empresa — barra apilada (más completo que solo "pendiente")
+  const filasEmp = Object.entries(EMPRESAS).map(([key,info])=>{
+    const er     = regsBase().filter(r=>r.empresa===key);
+    const total  = er.reduce((s,r)=>s+(parseFloat(r.total_mn)||0),0);
+    if (!total) return '';
+    const pagE   = er.reduce((s,r)=>s + (r.status==='pagada' ? (parseFloat(r.total_mn)||0) : abonadoDeReg(r)), 0);
+    const pendE  = Math.max(total - pagE, 0);
+    const pctPag = Math.round((pagE/total)*100);
+    const pctPen = 100 - pctPag;
+    return `<div class="chart-emp-row">
+      <div class="chart-emp-code" title="${info.nombre}">${info.short}</div>
+      <div class="chart-emp-track" role="img" aria-label="${info.nombre}: ${pctPag}% pagado">
+        <div class="chart-emp-seg pagado"   data-pct="${pctPag}" style="width:0">${pctPag>=14?`<span class="chart-emp-seg-lbl">${pctPag}%</span>`:''}</div>
+        <div class="chart-emp-seg pendiente" data-pct="${pctPen}" style="width:0">${pctPen>=14?`<span class="chart-emp-seg-lbl">${pctPen}%</span>`:''}</div>
+      </div>
+      <div class="chart-emp-total">
+        <div class="chart-emp-total-val">${fmtK(total)}</div>
+        <div class="chart-emp-total-pct">${pendE>0?`${fmtK(pendE)} pend.`:'liquidado'}</div>
+      </div>
     </div>`;
   }).join('');
+  $('chartEmpresas').innerHTML = `
+    <div class="chart-legend">
+      <span class="chart-legend-item"><span class="chart-legend-dot" style="background:#2D6A4F"></span>Pagado</span>
+      <span class="chart-legend-item"><span class="chart-legend-dot" style="background:#B8954A"></span>Pendiente</span>
+    </div>
+    <div class="chart-emp-rows">${filasEmp || '<div class="eq-empty" style="padding:20px 0">Sin datos para este periodo.</div>'}</div>`;
+
   requestAnimationFrame(()=> requestAnimationFrame(()=>{
-    document.querySelectorAll('#chartBars .chart-bar, #chartEmpresas .chart-bar').forEach(b=>{ b.style.width = b.getAttribute('data-pct') + '%'; });
+    document.querySelectorAll('#chartEmpresas .chart-emp-seg').forEach(b=>{ b.style.width = b.getAttribute('data-pct') + '%'; });
   }));
 
   $('reporteEmpresas').innerHTML=Object.entries(EMPRESAS).map(([key,info])=>{
